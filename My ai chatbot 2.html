@@ -62,17 +62,17 @@
             <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
         </header>
 
-        <!-- API Key Input Bar (Visible when not in a managed environment) -->
+        <!-- API Key Input Bar (Now disabled, key is hardcoded) -->
         <div id="api-key-container" class="p-4 bg-yellow-900/50 border-b border-yellow-700/50 hidden">
             <label for="api-key-input" class="block text-sm font-medium text-yellow-300 mb-1">
-                ⚠️ API Key Required: Enter your Gemini API Key for local use.
+                ⚠️ API Key Note: The key is now hardcoded in the script (Do not share this file!).
             </label>
             <input
                 type="password"
                 id="api-key-input"
-                placeholder="Paste your GEMINI_API_KEY here"
+                placeholder="API Key is hardcoded in the script"
                 class="w-full p-2 text-gray-900 bg-yellow-100 border border-yellow-400 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition-all"
-                oninput="saveApiKey(this.value)"
+                disabled
             >
         </div>
 
@@ -123,16 +123,8 @@
 
     <script>
         // --- API Key Setup ---
-        const API_KEY_STORAGE_KEY = 'geminiApiKey';
-        let GEMINI_API_KEY = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
-
-        // Function to save the key to localStorage
-        function saveApiKey(key) {
-            GEMINI_API_KEY = key.trim();
-            localStorage.setItem(API_KEY_STORAGE_KEY, GEMINI_API_KEY);
-            // Re-check visibility on key change
-            checkApiKeyVisibility(); 
-        }
+        // WARNING: API Key is now hardcoded as per user request. Do not share this file publicly.
+        let GEMINI_API_KEY = 'AQ.Ab8RN6I0OaJyrswpZ3z2TuQTq8CehpSVWIo8cpio645Zk_aMXA';
 
         // Function to determine the URL (adding key only if present)
         function getApiUrl(basePath) {
@@ -143,17 +135,11 @@
         }
 
         // Function to check if the API key input bar should be visible
+        // Since the key is hardcoded, this function now ensures the input container is always hidden.
         function checkApiKeyVisibility() {
              const container = document.getElementById('api-key-container');
-             const input = document.getElementById('api-key-input');
-             if (!GEMINI_API_KEY) {
-                container.classList.remove('hidden');
-             } else {
-                container.classList.add('hidden');
-             }
-             if (input) {
-                input.value = GEMINI_API_KEY; // Populate input if key exists
-             }
+             // Ensure it's hidden as the key is embedded
+             container.classList.add('hidden');
         }
         // End API Key Setup
 
@@ -408,15 +394,6 @@
             const userText = userInput.value.trim();
             if (!userText) return;
             
-            // Check for API key before processing the request
-            if (!GEMINI_API_KEY && window.location.protocol.startsWith('file')) {
-                 displayMessage("You are running this file locally. Please enter your API Key in the yellow box above to proceed.", 'ai');
-                 userInput.value = '';
-                 document.getElementById('api-key-container').classList.remove('hidden');
-                 document.getElementById('api-key-input').focus();
-                 return;
-            }
-
             // 1. Display user message
             displayMessage(userText, 'user');
             userInput.value = '';
@@ -480,7 +457,7 @@
                 let errorText = `Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`;
                 // If it's a 403, give a specific hint
                 if (lastError.includes("403")) {
-                    errorText += "<br>This is often caused by a missing or invalid API Key when running locally.";
+                    errorText += "<br>Please verify your hardcoded API Key is correct and still valid.";
                 }
                 displayMessage(errorText, 'ai');
                 console.error("Gemini API call failed after max retries:", lastError);
