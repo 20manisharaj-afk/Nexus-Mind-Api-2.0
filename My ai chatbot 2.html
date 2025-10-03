@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Mind 2.0 Chatbot (GPT, Claude, Perplexity Hybrid)</title>
+    <title>Nexus Mind 2.0 Chatbot (Hybrid GPT, Claude, Perplexity)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Use Inter font -->
@@ -62,6 +62,20 @@
             <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
         </header>
 
+        <!-- API Key Input Bar (Visible when not in a managed environment) -->
+        <div id="api-key-container" class="p-4 bg-yellow-900/50 border-b border-yellow-700/50 hidden">
+            <label for="api-key-input" class="block text-sm font-medium text-yellow-300 mb-1">
+                ⚠️ API Key Required: Enter your Gemini API Key for local use.
+            </label>
+            <input
+                type="password"
+                id="api-key-input"
+                placeholder="Paste your GEMINI_API_KEY here"
+                class="w-full p-2 text-gray-900 bg-yellow-100 border border-yellow-400 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                oninput="saveApiKey(this.value)"
+            >
+        </div>
+
         <!-- Chat Messages Area -->
         <main id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
             <!-- Initial Welcome Message -->
@@ -108,9 +122,45 @@
     </div>
 
     <script>
-        // API Configuration: Relying on the execution environment to handle authentication.
-        const CHAT_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
-        const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`;
+        // --- API Key Setup ---
+        const API_KEY_STORAGE_KEY = 'geminiApiKey';
+        let GEMINI_API_KEY = localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+
+        // Function to save the key to localStorage
+        function saveApiKey(key) {
+            GEMINI_API_KEY = key.trim();
+            localStorage.setItem(API_KEY_STORAGE_KEY, GEMINI_API_KEY);
+            // Re-check visibility on key change
+            checkApiKeyVisibility(); 
+        }
+
+        // Function to determine the URL (adding key only if present)
+        function getApiUrl(basePath) {
+            if (GEMINI_API_KEY) {
+                return `${basePath}?key=${GEMINI_API_KEY}`;
+            }
+            return basePath;
+        }
+
+        // Function to check if the API key input bar should be visible
+        function checkApiKeyVisibility() {
+             const container = document.getElementById('api-key-container');
+             const input = document.getElementById('api-key-input');
+             if (!GEMINI_API_KEY) {
+                container.classList.remove('hidden');
+             } else {
+                container.classList.add('hidden');
+             }
+             if (input) {
+                input.value = GEMINI_API_KEY; // Populate input if key exists
+             }
+        }
+        // End API Key Setup
+
+        // API Configurations (now using the getter function)
+        const CHAT_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
+        const TTS_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`;
+
 
         // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
         const SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
@@ -126,7 +176,6 @@
 
         // --- TTS Utility Functions ---
 
-        // Function to convert Base64 string to ArrayBuffer
         function base64ToArrayBuffer(base64) {
             const binaryString = atob(base64);
             const len = binaryString.length;
@@ -137,14 +186,12 @@
             return bytes.buffer;
         }
 
-        // Helper for pcmToWav
         function writeString(s, view, offset) {
             for (let i = 0; i < s.length; i++) {
                 view.setUint8(offset + i, s.charCodeAt(i));
             }
         }
         
-        // Function to convert PCM audio data to WAV Blob (required for playback)
         function pcmToWav(pcm16, sampleRate) {
             const numChannels = 1;
             const bitsPerSample = 16;
@@ -157,26 +204,22 @@
 
             let offset = 0;
             
-            // RIFF header
             writeString('RIFF', view, offset); offset += 4;
-            view.setUint32(offset, 36 + dataSize, true); offset += 4; // ChunkSize
+            view.setUint32(offset, 36 + dataSize, true); offset += 4;
             writeString('WAVE', view, offset); offset += 4;
             
-            // FMT sub-chunk
             writeString('fmt ', view, offset); offset += 4;
-            view.setUint32(offset, 16, true); offset += 4; // Subchunk1Size (16 for PCM)
-            view.setUint16(offset, 1, true); offset += 2; // AudioFormat (1 for PCM)
-            view.setUint16(offset, numChannels, true); offset += 2; // NumChannels
-            view.setUint32(offset, sampleRate, true); offset += 4; // SampleRate
-            view.setUint32(offset, byteRate, true); offset += 4; // ByteRate
-            view.setUint16(offset, blockAlign, true); offset += 2; // BlockAlign
-            view.setUint16(offset, bitsPerSample, true); offset += 2; // BitsPerSample
+            view.setUint32(offset, 16, true); offset += 4;
+            view.setUint16(offset, 1, true); offset += 2;
+            view.setUint16(offset, numChannels, true); offset += 2;
+            view.setUint32(offset, sampleRate, true); offset += 4;
+            view.setUint32(offset, byteRate, true); offset += 4;
+            view.setUint16(offset, blockAlign, true); offset += 2;
+            view.setUint16(offset, bitsPerSample, true); offset += 2;
             
-            // DATA sub-chunk
             writeString('data', view, offset); offset += 4;
-            view.setUint32(offset, dataSize, true); offset += 4; // Subchunk2Size
+            view.setUint32(offset, dataSize, true); offset += 4;
             
-            // PCM data
             const pcm16Bytes = new Uint8Array(pcm16.buffer);
             new Uint8Array(buffer, 44).set(pcm16Bytes);
             
@@ -185,8 +228,6 @@
         
         /**
          * Generates and plays the TTS audio using the Gemini API.
-         * @param {string} textToSpeak - The text content to convert to speech.
-         * @param {HTMLButtonElement} buttonElement - The button triggering the action.
          */
         async function generateTTS(textToSpeak, buttonElement) {
             buttonElement.disabled = true;
@@ -208,7 +249,7 @@
             };
 
             try {
-                const response = await fetch(TTS_API_URL, {
+                const response = await fetch(getApiUrl(TTS_BASE_PATH), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(ttsPayload)
@@ -253,7 +294,6 @@
                 console.error("TTS generation error:", error);
                 buttonElement.innerHTML = '⚠️ Error';
             } finally {
-                // If an error occurred, re-enable the button, otherwise it's handled by audio.onended
                 if (buttonElement.innerHTML.includes('Error')) {
                     buttonElement.disabled = false;
                 }
@@ -264,9 +304,6 @@
 
         /**
          * Utility function to display a chat message.
-         * @param {string} text - The content of the message.
-         * @param {string} sender - 'user' or 'ai'.
-         * @param {Array<Object>} [sources=[]] - Array of source objects for AI response.
          */
         function displayMessage(text, sender, sources = []) {
             const messageContainer = document.createElement('div');
@@ -284,12 +321,10 @@
                 senderLabel.textContent = 'Nexus Mind 2.0';
                 headerDiv.appendChild(senderLabel);
 
-                // ✨ LLM-powered TTS Feature Button
                 const ttsButton = document.createElement('button');
                 ttsButton.className = 'text-xs text-purple-400 hover:text-white transition-colors disabled:opacity-50 px-2 py-1 bg-[#2a1c47] rounded-full flex items-center shadow-md';
                 ttsButton.innerHTML = '✨ Listen';
                 ttsButton.title = 'Text-to-Speech (TTS) powered by Gemini';
-                // Pass the raw text (with \n) for clean reading
                 ttsButton.onclick = () => generateTTS(text, ttsButton); 
                 
                 headerDiv.appendChild(ttsButton);
@@ -297,13 +332,12 @@
 
             }
             
-            // Simple markdown-like rendering (basic line breaks for demonstration)
+            // Simple markdown-like rendering
             const content = document.createElement('div');
-            // If the response contains markdown (like **Abhiraj Singh**), we allow basic HTML for bolding/italics
             content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
             messageBubble.appendChild(content);
 
-            // Add sources/citations if present (Perplexity-like feature)
+            // Add sources/citations
             if (sender === 'ai' && sources.length > 0) {
                 const sourceContainer = document.createElement('div');
                 sourceContainer.className = 'mt-3 pt-3 border-t border-[#30363d] flex flex-wrap gap-2';
@@ -327,44 +361,30 @@
             messageContainer.appendChild(messageBubble);
             chatMessages.appendChild(messageContainer);
 
-            // Scroll to the latest message
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         /**
-         * Checks the user input against a list of triggers for the creator's name
-         * and provides a hardcoded response if a match is found.
-         * @param {string} userText - The raw text entered by the user.
-         * @returns {boolean} True if a hardcoded response was given, false otherwise.
+         * Checks the user input against a list of triggers for the creator's name.
          */
         function checkHardcodedResponse(userText) {
             const normalizedText = userText.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
             
-            // Hardcoded triggers for the creator question
             const creatorTriggers = [
-                "who made you",
-                "who is your creator",
-                "who created you",
-                "made by",
-                "who developed you",
-                "your developer",
-                "creator name",
-                "who is abhiraj",
-                "who is abhiraj singh"
+                "who made you", "who is your creator", "who created you",
+                "made by", "who developed you", "your developer",
+                "creator name", "who is abhiraj", "who is abhiraj singh"
             ];
 
-            // Check if the normalized input contains any of the creator triggers
             if (creatorTriggers.some(trigger => normalizedText.includes(trigger))) {
-                // Hardcoded response, formatted with Markdown for emphasis
                 displayMessage("I am a cutting-edge hybrid AI, Nexus Mind 2.0, and I was created by **Abhiraj Singh**.", 'ai');
-                return true; // Hardcoded response handled
+                return true;
             }
-            return false; // No hardcoded response, proceed to API
+            return false;
         }
 
         /**
          * Enables/disables the input and shows/hides the loading spinner.
-         * @param {boolean} loading
          */
         function setLoading(loading) {
             isGenerating = loading;
@@ -387,37 +407,46 @@
 
             const userText = userInput.value.trim();
             if (!userText) return;
+            
+            // Check for API key before processing the request
+            if (!GEMINI_API_KEY && window.location.protocol.startsWith('file')) {
+                 displayMessage("You are running this file locally. Please enter your API Key in the yellow box above to proceed.", 'ai');
+                 userInput.value = '';
+                 document.getElementById('api-key-container').classList.remove('hidden');
+                 document.getElementById('api-key-input').focus();
+                 return;
+            }
 
             // 1. Display user message
             displayMessage(userText, 'user');
-            userInput.value = ''; // Clear input
+            userInput.value = '';
 
-            // 2. Hardcoded Response Check - If a match is found, respond immediately and exit.
+            // 2. Hardcoded Response Check
             if (checkHardcodedResponse(userText)) {
                 userInput.focus();
                 return;
             }
             
-            // 3. Start Loading for API Call (only if not handled by hardcoded response)
+            // 3. Start Loading
             setLoading(true);
 
-            // 4. Construct API Payload (includes Google Search tool)
+            // 4. Construct API Payload
             const payload = {
                 contents: [{ parts: [{ text: userText }] }],
-                tools: [{ "google_search": {} }], // Perplexity-like grounding
+                tools: [{ "google_search": {} }],
                 systemInstruction: {
-                    parts: [{ text: SYSTEM_PROMPT }] // Hybrid AI Persona
+                    parts: [{ text: SYSTEM_PROMPT }]
                 },
             };
 
-            // 5. API Call with exponential backoff for robustness
+            // 5. API Call with exponential backoff
             const MAX_RETRIES = 3;
             let response = null;
             let lastError = null;
 
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                 try {
-                    const fetchResponse = await fetch(CHAT_API_URL, {
+                    const fetchResponse = await fetch(getApiUrl(CHAT_BASE_PATH), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -425,17 +454,16 @@
 
                     if (fetchResponse.ok) {
                         response = await fetchResponse.json();
-                        break; // Success!
+                        break;
                     } else if (fetchResponse.status === 429 || fetchResponse.status >= 500) {
-                        // Rate limit or server error - implement backoff
                         lastError = `Server error (Status: ${fetchResponse.status})`;
                         const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
                         await new Promise(resolve => setTimeout(resolve, delay));
                         continue;
                     } else {
-                        // Other client-side errors (e.g., 400 Bad Request)
-                        lastError = `API Error: ${await fetchResponse.text()}`;
-                        break;
+                        // Capture the specific 403 error message
+                        lastError = `API Error: ${fetchResponse.status} - ${await fetchResponse.text()}`;
+                        break; 
                     }
 
                 } catch (error) {
@@ -449,7 +477,12 @@
 
             // 6. Process Response
             if (!response) {
-                displayMessage(`Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`, 'ai');
+                let errorText = `Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`;
+                // If it's a 403, give a specific hint
+                if (lastError.includes("403")) {
+                    errorText += "<br>This is often caused by a missing or invalid API Key when running locally.";
+                }
+                displayMessage(errorText, 'ai');
                 console.error("Gemini API call failed after max retries:", lastError);
                 return;
             }
@@ -462,7 +495,7 @@
                 return;
             }
             
-            // 7. Extract grounding sources (Perplexity feature)
+            // 7. Extract grounding sources
             let sources = [];
             const groundingMetadata = candidate.groundingMetadata;
             if (groundingMetadata && groundingMetadata.groundingAttributions) {
@@ -476,11 +509,12 @@
 
             // 8. Display AI response
             displayMessage(text, 'ai', sources);
-            userInput.focus(); // Keep focus on input for quick follow-up
+            userInput.focus();
         }
 
-        // Initialize focus on load
+        // Initialize focus and API key check on load
         window.onload = () => {
+            checkApiKeyVisibility();
             userInput.focus();
         }
 
