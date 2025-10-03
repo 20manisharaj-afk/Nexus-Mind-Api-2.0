@@ -63,9 +63,9 @@
         </header>
 
         <!-- API Key Warning/Info Bar -->
-        <div id="api-key-container" class="p-3 bg-green-900/50 border-b border-green-700/50">
-            <p class="text-sm font-medium text-green-300">
-                ✅ **Authentication Updated:** The hardcoded key has been removed. The app now uses the secure environment key. If running locally, please check the script to paste a valid 'AIza...' key.
+        <div id="api-key-container" class="p-3 bg-red-900/50 border-b border-red-700/50">
+            <p class="text-sm font-medium text-red-300">
+                🚨 **ACTION REQUIRED: Authentication Error.** The wrong key format was used. Please replace the placeholder key below with your **valid Google AI Studio API key** (starts with `AIza`).
             </p>
         </div>
 
@@ -117,15 +117,17 @@
 
     <script>
         // --- API Key Setup ---
-        // WARNING: The previously invalid key has been removed. 
-        // We now rely on the secure environment to provide the key, or an empty string if running locally.
-        let GEMINI_API_KEY = '';
+        // ACTION REQUIRED: You MUST replace the placeholder below with your valid Google AI Studio API key (starts with 'AIza').
+        // If the key is left as the placeholder, the application will not work.
+        let GEMINI_API_KEY = 'YOUR_VALID_AIZA_KEY_HERE'; // <--- PASTE YOUR KEY HERE
 
         // Function to determine the URL (adds key only if present)
         function getApiUrl(basePath) {
-            if (GEMINI_API_KEY) {
+            // Check if the key is the placeholder, and if so, don't append it.
+            if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_VALID_AIZA_KEY_HERE') {
                 return `${basePath}?key=${GEMINI_API_KEY}`;
             }
+            // If placeholder or empty, rely on environment injection (if available) or fail
             return basePath;
         }
 
@@ -257,6 +259,13 @@
         async function sendMessage() {
             if (isGenerating) return;
 
+            // Strict check for API key
+            if (GEMINI_API_KEY === 'YOUR_VALID_AIZA_KEY_HERE' || !GEMINI_API_KEY) {
+                displayMessage("Error: The API Key is still missing or is the placeholder. Please paste your valid 'AIza...' key into the `GEMINI_API_KEY` variable in the script.", 'ai');
+                return;
+            }
+
+
             const userText = userInput.value.trim();
             if (!userText) return;
             
@@ -289,7 +298,7 @@
 
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                 try {
-                    // Use getApiUrl to append the key only if GEMINI_API_KEY is not empty
+                    // Use getApiUrl to append the key if GEMINI_API_KEY is present and not the placeholder
                     const fetchResponse = await fetch(getApiUrl(CHAT_BASE_PATH), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -324,10 +333,9 @@
                 
                 if (lastError.includes("401") || lastError.includes("403")) {
                     errorText = `
-                        Sorry, I encountered an **Authentication Error**. 
-                        This usually means the API key is missing or invalid. 
-                        Since the key has been removed from the script, please try refreshing the application to allow the secure environment key to load.
-                        If the issue persists, you may need to manually paste a valid 'AIza...' key in the script if running in a non-Canvas environment.
+                        Sorry, I encountered an **Authentication Error (401/403)**. 
+                        This means the API key is missing or invalid. 
+                        Please **paste your valid 'AIza...' key** into the \`GEMINI_API_KEY = 'YOUR_VALID_AIZA_KEY_HERE';\` line in the script and refresh.
                     `;
                 }
 
@@ -370,3 +378,4 @@
     </script>
 </body>
 </html>
+
