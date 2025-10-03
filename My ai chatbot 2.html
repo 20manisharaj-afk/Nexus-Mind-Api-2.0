@@ -62,18 +62,11 @@
             <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
         </header>
 
-        <!-- API Key Input Bar (Now disabled, key is hardcoded) -->
-        <div id="api-key-container" class="p-4 bg-yellow-900/50 border-b border-yellow-700/50 hidden">
-            <label for="api-key-input" class="block text-sm font-medium text-yellow-300 mb-1">
-                ⚠️ API Key Note: The key is now hardcoded in the script (Do not share this file!).
-            </label>
-            <input
-                type="password"
-                id="api-key-input"
-                placeholder="API Key is hardcoded in the script"
-                class="w-full p-2 text-gray-900 bg-yellow-100 border border-yellow-400 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition-all"
-                disabled
-            >
+        <!-- API Key Warning/Info Bar -->
+        <div id="api-key-container" class="p-3 bg-green-900/50 border-b border-green-700/50">
+            <p class="text-sm font-medium text-green-300">
+                ✅ **Authentication Updated:** The hardcoded key has been removed. The app now uses the secure environment key. If running locally, please check the script to paste a valid 'AIza...' key.
+            </p>
         </div>
 
         <!-- Chat Messages Area -->
@@ -124,10 +117,11 @@
 
     <script>
         // --- API Key Setup ---
-        // WARNING: API Key is now hardcoded as per user request. Do not share this file publicly.
-        let GEMINI_API_KEY = 'AQ.Ab8RN6I0OaJyrswpZ3z2TuQTq8CehpSVWIo8cpio645Zk_aMXA';
+        // WARNING: The previously invalid key has been removed. 
+        // We now rely on the secure environment to provide the key, or an empty string if running locally.
+        let GEMINI_API_KEY = '';
 
-        // Function to determine the URL (adding key only if present)
+        // Function to determine the URL (adds key only if present)
         function getApiUrl(basePath) {
             if (GEMINI_API_KEY) {
                 return `${basePath}?key=${GEMINI_API_KEY}`;
@@ -135,16 +129,15 @@
             return basePath;
         }
 
-        // Function to check if the API key input bar should be visible
+        // Function to check if the API key info bar should be visible (always shown now for information)
         function checkApiKeyVisibility() {
-             const container = document.getElementById('api-key-container');
-             container.classList.add('hidden');
+             // We keep the warning visible now
         }
         // End API Key Setup
 
         // API Configurations
         const CHAT_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
-        // Removed TTS_BASE_PATH since the API key is incompatible with the TTS service.
+        // TTS_BASE_PATH is removed as it's incompatible with API key authentication.
 
 
         // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
@@ -158,10 +151,6 @@
         const loadingSpinner = document.getElementById('loading-spinner');
 
         let isGenerating = false;
-
-        // --- TTS Utility Functions (REMOVED) ---
-        // The TTS functions (base64ToArrayBuffer, writeString, pcmToWav, generateTTS) 
-        // have been removed to prevent the 401 UNAUTHENTICATED error.
 
         // --- Chat Functions ---
 
@@ -184,7 +173,7 @@
                 senderLabel.textContent = 'Nexus Mind 2.0';
                 headerDiv.appendChild(senderLabel);
 
-                // Replaced TTS Button with a Disabled Text
+                // Disabled TTS Text
                 const ttsStatus = document.createElement('span');
                 ttsStatus.className = 'text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default';
                 ttsStatus.textContent = '🚫 TTS Disabled';
@@ -197,7 +186,6 @@
             
             // Simple markdown-like rendering
             const content = document.createElement('div');
-            // Using a simple regex to replace **bold** and \n with <br>
             content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
             messageBubble.appendChild(content);
 
@@ -301,6 +289,7 @@
 
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                 try {
+                    // Use getApiUrl to append the key only if GEMINI_API_KEY is not empty
                     const fetchResponse = await fetch(getApiUrl(CHAT_BASE_PATH), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -332,10 +321,16 @@
             // 6. Process Response
             if (!response) {
                 let errorText = `Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`;
-                // If it's a 403, give a specific hint
-                if (lastError.includes("403")) {
-                    errorText += "<br>Please verify your hardcoded API Key is correct and still valid.";
+                
+                if (lastError.includes("401") || lastError.includes("403")) {
+                    errorText = `
+                        Sorry, I encountered an **Authentication Error**. 
+                        This usually means the API key is missing or invalid. 
+                        Since the key has been removed from the script, please try refreshing the application to allow the secure environment key to load.
+                        If the issue persists, you may need to manually paste a valid 'AIza...' key in the script if running in a non-Canvas environment.
+                    `;
                 }
+
                 displayMessage(errorText, 'ai');
                 console.error("Gemini API call failed after max retries:", lastError);
                 return;
