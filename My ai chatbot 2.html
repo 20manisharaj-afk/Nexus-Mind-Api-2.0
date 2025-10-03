@@ -3,33 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Mind 2.0 Chatbot (Hybrid GPT, Claude, Perplexity)</title>
+    <title>Nexus Mind 2.0 Chatbot (Multi-Mode)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Highlight.js for code blocks -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
     <!-- Use Inter font -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117; /* Dark background */
+            transition: background-color 0.3s ease;
         }
-        .chat-bubble-user {
-            background-color: #1f4287; /* Slightly vibrant blue for user */
+
+        /* Base styles for the dark mode look */
+        .chat-container {
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
         }
-        .chat-bubble-ai {
-            background-color: #21262d; /* Dark grey for AI */
-        }
-        /* Custom scrollbar for chat area */
-        #chat-messages::-webkit-scrollbar {
-            width: 8px;
-        }
-        #chat-messages::-webkit-scrollbar-thumb {
-            background-color: #30363d;
-            border-radius: 4px;
-        }
-        #chat-messages::-webkit-scrollbar-track {
-            background-color: #161b22;
-        }
+
+        /* Scrollbar styles (consistent across modes) */
+        #chat-messages::-webkit-scrollbar { width: 8px; }
+        #chat-messages::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb); border-radius: 4px; }
+        #chat-messages::-webkit-scrollbar-track { background-color: var(--scroll-track); }
+
         .citation-badge {
             display: inline-flex;
             align-items: center;
@@ -37,32 +38,120 @@
             margin-top: 4px;
             font-size: 0.75rem;
             font-weight: 500;
-            color: #9e7fec;
-            background-color: #2a1c47;
-            border: 1px solid #4a3473;
             border-radius: 9999px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            color: var(--citation-text);
+            background-color: var(--citation-bg);
+            border: 1px solid var(--citation-border);
         }
-        .citation-badge:hover {
-            background-color: #3b285f;
+        .citation-badge:hover { background-color: var(--citation-hover); }
+
+        /* Mode-Specific Variables (Default to Narrative Mode) */
+        :root {
+            --bg-body: #0d1117;
+            --bg-primary: #161b22;
+            --bg-secondary: #21262d;
+            --border-color: #30363d;
+            --text-color: #e6e6e6;
+            --mode-highlight: #7c3aed; /* Purple */
+
+            --user-bubble: #1f4287;
+            --ai-bubble: #21262d;
+
+            --citation-text: #9e7fec;
+            --citation-bg: #2a1c47;
+            --citation-border: #4a3473;
+            --citation-hover: #3b285f;
+
+            --scroll-thumb: #30363d;
+            --scroll-track: #161b22;
+        }
+
+        /* --- CODE MODE (Monokai) --- */
+        .code-mode {
+            --bg-body: #1e1e1e; /* VS Code dark */
+            --bg-primary: #272822; /* Monokai background */
+            --bg-secondary: #3e3e3e;
+            --border-color: #555555;
+            --text-color: #f8f8f2;
+            --mode-highlight: #a6e22e; /* Neon Green */
+
+            --user-bubble: #4d7a18; /* Darker green */
+            --ai-bubble: #34352f;
+
+            --citation-text: #f92672; /* Pink */
+            --citation-bg: #3f3f39;
+            --citation-border: #f9267244;
+            --citation-hover: #4a4a44;
+
+            --scroll-thumb: #555555;
+            --scroll-track: #272822;
+        }
+
+        /* Apply variables */
+        body { background-color: var(--bg-body); color: var(--text-color); }
+        .chat-bubble-user { background-color: var(--user-bubble); }
+        .chat-bubble-ai { background-color: var(--ai-bubble); }
+        .chat-container { border-color: var(--border-color); background-color: var(--bg-primary); }
+        .chat-header-border { border-color: var(--border-color); }
+        .input-bg { background-color: var(--bg-secondary); border-color: var(--border-color); color: var(--text-color); }
+        .highlight-text { color: var(--mode-highlight); }
+        .highlight-bg { background-color: var(--mode-highlight); }
+        .input-focus:focus {
+            --tw-ring-color: var(--mode-highlight);
+            --tw-border-opacity: 1;
+            border-color: var(--mode-highlight);
+        }
+
+        /* Global style for code blocks using hljs */
+        pre {
+            padding: 1rem;
+            margin-top: 0.5rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            background: #272822 !important; /* Ensure highlight.js background is correct in code mode */
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-3xl h-[90vh] flex flex-col bg-[#161b22] shadow-2xl rounded-xl overflow-hidden border border-[#30363d]">
+    <div id="chat-app" class="w-full max-w-3xl h-[90vh] flex flex-col rounded-xl overflow-hidden chat-container">
         
         <!-- Header -->
-        <header class="p-4 border-b border-[#30363d] flex items-center justify-between">
+        <header class="p-4 border-b chat-header-border flex items-center justify-between">
             <h1 class="text-xl font-bold text-gray-100">
-                Nexus Mind 2.0
-                <span class="text-xs font-normal text-purple-400 block sm:inline-block">(Hybrid GPT, Claude, Perplexity)</span>
+                Nexus Mind 2.0 
+                <span id="mode-name" class="text-xs font-normal highlight-text block sm:inline-block">(Narrative Mode)</span>
             </h1>
-            <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
+            <div class="flex items-center space-x-3">
+                 <!-- New: Mode Toggle Button -->
+                <button
+                    onclick="toggleMode()"
+                    id="mode-toggle-button"
+                    class="p-2 text-sm text-gray-400 hover:text-white transition-colors bg-[var(--bg-secondary)] rounded-full shadow-md"
+                    title="Switch Mode: Narrative / Code"
+                >
+                    <svg id="mode-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                      <!-- Default icon: Sparkles for Narrative -->
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846m0 0-2.846-.813.813-.813m0 0 2.846.813m0 0 2.846-.813.813.813m0 0-2.846.813m0 0 2.846-.813M16.5 12h.008v.008H16.5V12Zm-4.5 0h.008v.008H12V12Zm-4.5 0h.008v.008H7.5V12Zm9-4.5h.008v.008H16.5V7.5Zm-4.5 0h.008v.008H12V7.5Zm-4.5 0h.008v.008H7.5V7.5Zm9 9h.008v.008H16.5v-.008Zm-4.5 0h.008v.008H12v-.008Zm-4.5 0h.008v.008H7.5v-.008Z" />
+                    </svg>
+                </button>
+                 <!-- Reset Button -->
+                <button
+                    onclick="resetChat()"
+                    class="p-2 text-sm text-gray-400 hover:text-red-400 transition-colors bg-[var(--bg-secondary)] rounded-full shadow-md"
+                    title="Start a new conversation (clears history)"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181-3.181m0 0l-3.182-3.182M19.049 9.348A10.002 10.002 0 0112 20.04c-3.79 0-7.382-1.748-9.849-4.757m0 0l-3.181 3.182m3.181-3.182M19.049 9.348l3.181-3.182M4.95 9.348C3.182 6.784 1.748 3.192 4.757.75c3.008-2.509 6.6-3.181 9.849-2.222" />
+                    </svg>
+                </button>
+                <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
+            </div>
         </header>
 
-        <!-- API Key Warning/Info Bar -->
+        <!-- API Key Info Bar -->
         <div id="api-key-container" class="p-3 bg-green-900/50 border-b border-green-700/50">
             <p class="text-sm font-medium text-green-300">
                 ✅ **SUCCESS!** Your API key is now configured. The chatbot is ready.
@@ -72,36 +161,35 @@
         <!-- Chat Messages Area -->
         <main id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
             <!-- Initial Welcome Message -->
-            <div class="flex justify-start">
-                <div class="max-w-xl p-3 rounded-lg rounded-tl-none text-gray-100 shadow-md chat-bubble-ai">
+            <div id="welcome-message-container" class="flex justify-start">
+                <div class="max-w-xl p-3 rounded-lg rounded-tl-none shadow-md chat-bubble-ai">
                     <div class="flex justify-between items-center mb-1">
-                        <p class="font-semibold text-purple-300">Nexus Mind 2.0</p>
-                        <!-- TTS is disabled due to API key restrictions -->
+                        <p class="font-semibold highlight-text">Nexus Mind 2.0</p>
                         <span class="text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default" title="Text-to-Speech is disabled due to API key incompatibility.">
                             🚫 TTS Disabled
                         </span>
                     </div>
-                    <p>Hello! I am Nexus Mind 2.0, a fast hybrid model combining the best of conversational AI and real-time grounding. Ask me anything—from general knowledge to the latest facts!</p>
+                    <p>Hello! I am Nexus Mind 2.0, currently running in **Narrative Mode**. Ask me anything—from general knowledge to the latest facts!</p>
                 </div>
             </div>
             <!-- Messages will be injected here -->
         </main>
 
         <!-- Input Area -->
-        <footer class="p-4 border-t border-[#30363d]">
+        <footer class="p-4 border-t chat-header-border">
             <div class="relative">
                 <input
                     type="text"
                     id="user-input"
                     placeholder="Ask Nexus Mind 2.0 a question..."
-                    class="w-full p-3 pr-16 text-gray-100 bg-[#21262d] border border-[#30363d] rounded-lg focus:ring-purple-500 focus:border-purple-500 transition-all"
+                    class="w-full p-3 pr-16 rounded-lg focus:ring-2 input-focus input-bg transition-all"
                     onkeydown="if(event.key === 'Enter') sendMessage()"
                     autocomplete="off"
                 >
                 <button
                     onclick="sendMessage()"
                     id="send-button"
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg transition-colors disabled:bg-purple-800 disabled:opacity-50"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 highlight-bg hover:opacity-80 text-white font-bold py-2 px-3 rounded-lg transition-colors disabled:opacity-50"
                 >
                     <svg id="send-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.534.957l5 1.429a1 1 0 001.169-1.409l-7-14z"></path></svg>
                     <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -117,24 +205,72 @@
 
     <script>
         // --- API Key Setup ---
-        // The API key below has been provided by the user and should resolve the authentication issues.
         let GEMINI_API_KEY = 'AIzaSyBslOch6NMl2P5osM1F9rngfxm7fn5W0qM'; 
 
-        // Function to determine the URL (adds key only if present)
         function getApiUrl(basePath) {
-            // Check if the key is present
             if (GEMINI_API_KEY) {
                 return `${basePath}?key=${GEMINI_API_KEY}`;
             }
-            // If empty, rely on environment injection (for Canvas use)
             return basePath;
         }
 
-        // Function to check if the API key info bar should be visible (now a success message)
         function checkApiKeyVisibility() {
              // The success message is now always visible
         }
         // End API Key Setup
+
+        // --- Mode & Theme Management ---
+        const MODE = {
+            NARRATIVE: 'narrative',
+            CODE: 'code'
+        };
+        let currentMode = MODE.NARRATIVE;
+
+        const chatApp = document.getElementById('chat-app');
+        const modeName = document.getElementById('mode-name');
+        const modeToggleButton = document.getElementById('mode-toggle-button');
+        const modeIcon = document.getElementById('mode-icon');
+        const welcomeMessageContainer = document.getElementById('welcome-message-container');
+
+        /**
+         * Applies the selected theme and updates the UI elements.
+         */
+        function applyMode(mode) {
+            currentMode = mode;
+            chatApp.classList.remove(MODE.NARRATIVE, MODE.CODE);
+            chatApp.classList.add(mode);
+            document.body.classList.remove(MODE.NARRATIVE, MODE.CODE);
+            document.body.classList.add(mode);
+
+            if (mode === MODE.CODE) {
+                modeName.textContent = '(Code Mode)';
+                // VS Code Icon for Code Mode
+                modeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-3.75 16.5" />`;
+                modeToggleButton.title = "Switch Mode: Code / Narrative";
+                welcomeMessageContainer.innerHTML = createWelcomeMessage('Code Mode');
+            } else {
+                modeName.textContent = '(Narrative Mode)';
+                // Sparkles Icon for Narrative Mode
+                modeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846m0 0-2.846-.813.813-.813m0 0 2.846.813m0 0 2.846-.813.813.813m0 0-2.846.813m0 0 2.846-.813M16.5 12h.008v.008H16.5V12Zm-4.5 0h.008v.008H12V12Zm-4.5 0h.008v.008H7.5V12Zm9-4.5h.008v.008H16.5V7.5Zm-4.5 0h.008v.008H12V7.5Zm-4.5 0h.008v.008H7.5V7.5Zm9 9h.008v.008H16.5v-.008Zm-4.5 0h.008v.008H12v-.008Zm-4.5 0h.008v.008H7.5v-.008Z" />`;
+                modeToggleButton.title = "Switch Mode: Narrative / Code";
+                welcomeMessageContainer.innerHTML = createWelcomeMessage('Narrative Mode');
+            }
+            // Re-highlight all code blocks after mode change
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+
+        /**
+         * Toggles between CODE and NARRATIVE modes.
+         */
+        function toggleMode() {
+            const newMode = currentMode === MODE.NARRATIVE ? MODE.CODE : MODE.NARRATIVE;
+            applyMode(newMode);
+        }
+        
+        // --- End Mode & Theme Management ---
+
 
         // API Configurations
         const CHAT_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
@@ -142,35 +278,79 @@
 
 
         // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
-        const SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
+        const BASE_SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
 
-        // UI Elements
+        // --- UI & State ---
         const chatMessages = document.getElementById('chat-messages');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const sendIcon = document.getElementById('send-icon');
         const loadingSpinner = document.getElementById('loading-spinner');
 
+        // Conversation History Array
+        let chatHistory = [];
+        const MAX_HISTORY_TURNS = 5;
+
         let isGenerating = false;
 
-        // --- Chat Functions ---
+        /**
+         * Creates the welcome message HTML based on the current mode.
+         */
+        function createWelcomeMessage(modeText) {
+             return `
+                <div class="flex justify-start">
+                    <div class="max-w-xl p-3 rounded-lg rounded-tl-none shadow-md chat-bubble-ai">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="font-semibold highlight-text">Nexus Mind 2.0</p>
+                            <span class="text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default" title="Text-to-Speech is disabled due to API key incompatibility.">
+                                🚫 TTS Disabled
+                            </span>
+                        </div>
+                        <p>Hello! I am Nexus Mind 2.0, currently running in **${modeText}**. 
+                        ${modeText === 'Code Mode' 
+                            ? 'Ask me for code snippets, debugging help, or architectural advice. I will prioritize structured, highlighted code blocks.' 
+                            : 'Ask me anything—from general knowledge to the latest facts, and enjoy an immersive, conversational experience.'}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Clears the chat history and resets the display.
+         */
+        function resetChat() {
+            if (isGenerating) return;
+            chatHistory = [];
+            chatMessages.innerHTML = ''; // Clear all displayed messages
+            
+            // Re-display the initial welcome message
+            chatMessages.innerHTML = createWelcomeMessage(currentMode === MODE.CODE ? 'Code Mode' : 'Narrative Mode');
+            userInput.focus();
+            
+            // Temporary message to confirm reset
+            displayMessage('Conversation history cleared. Start a new topic now.', 'ai', [], true); 
+        }
 
         /**
          * Utility function to display a chat message.
+         * Includes Markdown parsing and code highlighting.
          */
-        function displayMessage(text, sender, sources = []) {
+        function displayMessage(text, sender, sources = [], isEphemeral = false) {
             const messageContainer = document.createElement('div');
             messageContainer.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
 
             const messageBubble = document.createElement('div');
-            messageBubble.className = `max-w-xl p-3 rounded-xl shadow-lg text-gray-100 transition-all ${sender === 'user' ? 'chat-bubble-user rounded-br-none' : 'chat-bubble-ai rounded-tl-none'}`;
+            messageBubble.className = `max-w-full md:max-w-xl p-3 rounded-xl shadow-lg transition-all ${sender === 'user' ? 'chat-bubble-user rounded-br-none' : 'chat-bubble-ai rounded-tl-none'}`;
+            messageBubble.style.color = 'var(--text-color)';
+
 
             if (sender === 'ai') {
                 const headerDiv = document.createElement('div');
                 headerDiv.className = 'flex justify-between items-center mb-1';
 
                 const senderLabel = document.createElement('p');
-                senderLabel.className = 'font-semibold text-purple-300';
+                senderLabel.className = 'font-semibold highlight-text';
                 senderLabel.textContent = 'Nexus Mind 2.0';
                 headerDiv.appendChild(senderLabel);
 
@@ -182,18 +362,67 @@
                 
                 headerDiv.appendChild(ttsStatus);
                 messageBubble.appendChild(headerDiv);
-
             }
             
-            // Simple markdown-like rendering
+            // --- Markdown Rendering & Code Highlighting ---
+            
+            // Basic HTML conversion
+            let htmlContent = text.replace(/\n/g, '<br>');
+            htmlContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
             const content = document.createElement('div');
-            content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
+            
+            // Handle code blocks using a simple approach, replacing triple backticks with pre/code
+            const codeBlockRegex = /```(\w+)?\n([\s\S]+?)\n```/g;
+            let parts = htmlContent.split(codeBlockRegex);
+
+            let currentText = '';
+            
+            for (let i = 0; i < parts.length; i++) {
+                if (i % 4 === 0) {
+                    // Regular text part
+                    currentText += parts[i];
+                } else if (i % 4 === 1) {
+                    // Language (parts[i]) - skip this, used for next part
+                } else if (i % 4 === 2) {
+                    // Code content (parts[i])
+                    
+                    // Flush preceding text
+                    if (currentText.trim() !== '') {
+                        const textElement = document.createElement('p');
+                        textElement.innerHTML = currentText.trim();
+                        content.appendChild(textElement);
+                        currentText = '';
+                    }
+
+                    const lang = parts[i - 1] || 'plaintext';
+                    const code = parts[i];
+                    
+                    const pre = document.createElement('pre');
+                    const codeBlock = document.createElement('code');
+                    codeBlock.classList.add('hljs', lang);
+                    codeBlock.textContent = code.trim();
+                    pre.appendChild(codeBlock);
+                    content.appendChild(pre);
+
+                    // Highlight the code block immediately
+                    hljs.highlightElement(codeBlock);
+                }
+            }
+            
+            // Flush any remaining text
+            if (currentText.trim() !== '') {
+                const textElement = document.createElement('p');
+                textElement.innerHTML = currentText.trim();
+                content.appendChild(textElement);
+            }
+            
             messageBubble.appendChild(content);
 
             // Add sources/citations
             if (sender === 'ai' && sources.length > 0) {
                 const sourceContainer = document.createElement('div');
-                sourceContainer.className = 'mt-3 pt-3 border-t border-[#30363d] flex flex-wrap gap-2';
+                sourceContainer.className = 'mt-3 pt-3 border-t chat-header-border flex flex-wrap gap-2';
 
                 sources.forEach((source, index) => {
                     const badge = document.createElement('a');
@@ -213,8 +442,15 @@
 
             messageContainer.appendChild(messageBubble);
             chatMessages.appendChild(messageContainer);
-
+            
+            // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Add to history only if not ephemeral and sender is AI
+            if (!isEphemeral && sender === 'ai') {
+                 // The user message was already pushed to history right before the API call
+                 chatHistory[chatHistory.length - 1].parts.push({ text: text });
+            }
         }
         
         /**
@@ -251,6 +487,19 @@
                 loadingSpinner.classList.add('hidden');
             }
         }
+        
+        /**
+         * Gets the system instruction based on the current mode.
+         */
+        function getSystemPrompt() {
+            let modeInstruction = "";
+            if (currentMode === MODE.CODE) {
+                modeInstruction = "Your current priority is CODE GENERATION. Use code blocks (` ```language...``` `) extensively for all output, even short snippets. Adopt a precise, technical, and highly structured tone. If asked for code, provide complete, runnable examples.";
+            } else {
+                modeInstruction = "Your current priority is NARRATIVE AND CONVERSATION. Use a descriptive, engaging, and friendly tone. Minimize the use of code blocks unless explicitly requested or necessary for clarity.";
+            }
+            return `${BASE_SYSTEM_PROMPT} ${modeInstruction}`;
+        }
 
         /**
          * Calls the Gemini API to get a response.
@@ -258,7 +507,6 @@
         async function sendMessage() {
             if (isGenerating) return;
 
-            // Strict check for API key
             if (!GEMINI_API_KEY) {
                 displayMessage("Error: The API Key is still missing. Please ensure your key is correctly pasted in the script.", 'ai');
                 return;
@@ -271,33 +519,45 @@
             // 1. Display user message
             displayMessage(userText, 'user');
             userInput.value = '';
+            
+            // 2. Add user message to history
+            chatHistory.push({ role: "user", parts: [{ text: userText }] });
 
-            // 2. Hardcoded Response Check
+            // 3. Trim history to the last MAX_HISTORY_TURNS
+            // We use chatHistory.length > MAX_HISTORY_TURNS * 2 because we push
+            // the user message (1) and then the AI response (1) making 2 entries per turn.
+            if (chatHistory.length > MAX_HISTORY_TURNS * 2) {
+                chatHistory = chatHistory.slice(chatHistory.length - (MAX_HISTORY_TURNS * 2));
+            }
+
+
+            // 4. Hardcoded Response Check
             if (checkHardcodedResponse(userText)) {
+                chatHistory.pop(); // Remove user message if hardcoded response is used
                 userInput.focus();
                 return;
             }
-            
-            // 3. Start Loading
-            setLoading(true);
 
-            // 4. Construct API Payload
+
+            // 5. Start Loading
+            setLoading(true);
+            
+            // 6. Construct API Payload with history and dynamic system prompt
             const payload = {
-                contents: [{ parts: [{ text: userText }] }],
+                contents: chatHistory, 
                 tools: [{ "google_search": {} }],
                 systemInstruction: {
-                    parts: [{ text: SYSTEM_PROMPT }]
+                    parts: [{ text: getSystemPrompt() }]
                 },
             };
 
-            // 5. API Call with exponential backoff
+            // 7. API Call with exponential backoff
             const MAX_RETRIES = 3;
             let response = null;
             let lastError = null;
 
             for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
                 try {
-                    // Use getApiUrl to append the key as it is now guaranteed to be a valid format
                     const fetchResponse = await fetch(getApiUrl(CHAT_BASE_PATH), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -326,17 +586,19 @@
 
             setLoading(false);
 
-            // 6. Process Response
+            // 8. Process Response
             if (!response) {
                 let errorText = `Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`;
                 
                 if (lastError.includes("401") || lastError.includes("403")) {
                     errorText = `
                         Sorry, I encountered an **Authentication Error (401/403)**. 
-                        This means the API key is invalid or has expired. Please check your key status.
+                        The key is present, but the **Generative Language API** is likely not enabled in your Google Cloud Project.
+                        Please enable the API service to fix this.
                     `;
                 }
 
+                chatHistory.pop(); 
                 displayMessage(errorText, 'ai');
                 console.error("Gemini API call failed after max retries:", lastError);
                 return;
@@ -346,11 +608,15 @@
             const text = candidate?.content?.parts?.[0]?.text;
 
             if (!text) {
+                chatHistory.pop(); 
                 displayMessage("I received an empty response. Please try asking again.", 'ai');
                 return;
             }
             
-            // 7. Extract grounding sources
+            // 9. Add AI response to history
+            chatHistory.push({ role: "model", parts: [{ text: text }] });
+            
+            // 10. Extract grounding sources
             let sources = [];
             const groundingMetadata = candidate.groundingMetadata;
             if (groundingMetadata && groundingMetadata.groundingAttributions) {
@@ -362,7 +628,7 @@
                     .filter(source => source.uri && source.title);
             }
 
-            // 8. Display AI response
+            // 11. Display AI response
             displayMessage(text, 'ai', sources);
             userInput.focus();
         }
@@ -370,11 +636,9 @@
         // Initialize focus and API key check on load
         window.onload = () => {
             checkApiKeyVisibility();
+            applyMode(MODE.NARRATIVE); // Initialize with Narrative Mode
             userInput.focus();
         }
-
     </script>
 </body>
 </html>
-
-
