@@ -108,10 +108,9 @@
     </div>
 
     <script>
-        // API Configuration
-        const apiKey = ""; // API Key will be automatically handled by the environment
-        const CHAT_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-        const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+        // API Configuration: Relying on the execution environment to handle authentication.
+        const CHAT_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
+        const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`;
 
         // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
         const SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
@@ -300,7 +299,8 @@
             
             // Simple markdown-like rendering (basic line breaks for demonstration)
             const content = document.createElement('div');
-            content.innerHTML = text.replace(/\n/g, '<br>'); // Replace \n for display
+            // If the response contains markdown (like **Abhiraj Singh**), we allow basic HTML for bolding/italics
+            content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
             messageBubble.appendChild(content);
 
             // Add sources/citations if present (Perplexity-like feature)
@@ -329,6 +329,37 @@
 
             // Scroll to the latest message
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        /**
+         * Checks the user input against a list of triggers for the creator's name
+         * and provides a hardcoded response if a match is found.
+         * @param {string} userText - The raw text entered by the user.
+         * @returns {boolean} True if a hardcoded response was given, false otherwise.
+         */
+        function checkHardcodedResponse(userText) {
+            const normalizedText = userText.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+            
+            // Hardcoded triggers for the creator question
+            const creatorTriggers = [
+                "who made you",
+                "who is your creator",
+                "who created you",
+                "made by",
+                "who developed you",
+                "your developer",
+                "creator name",
+                "who is abhiraj",
+                "who is abhiraj singh"
+            ];
+
+            // Check if the normalized input contains any of the creator triggers
+            if (creatorTriggers.some(trigger => normalizedText.includes(trigger))) {
+                // Hardcoded response, formatted with Markdown for emphasis
+                displayMessage("I am a cutting-edge hybrid AI, Nexus Mind 2.0, and I was created by **Abhiraj Singh**.", 'ai');
+                return true; // Hardcoded response handled
+            }
+            return false; // No hardcoded response, proceed to API
         }
 
         /**
@@ -360,9 +391,17 @@
             // 1. Display user message
             displayMessage(userText, 'user');
             userInput.value = ''; // Clear input
+
+            // 2. Hardcoded Response Check - If a match is found, respond immediately and exit.
+            if (checkHardcodedResponse(userText)) {
+                userInput.focus();
+                return;
+            }
+            
+            // 3. Start Loading for API Call (only if not handled by hardcoded response)
             setLoading(true);
 
-            // 2. Construct API Payload (includes Google Search tool)
+            // 4. Construct API Payload (includes Google Search tool)
             const payload = {
                 contents: [{ parts: [{ text: userText }] }],
                 tools: [{ "google_search": {} }], // Perplexity-like grounding
@@ -371,7 +410,7 @@
                 },
             };
 
-            // 3. API Call with exponential backoff for robustness
+            // 5. API Call with exponential backoff for robustness
             const MAX_RETRIES = 3;
             let response = null;
             let lastError = null;
@@ -408,7 +447,7 @@
 
             setLoading(false);
 
-            // 4. Process Response
+            // 6. Process Response
             if (!response) {
                 displayMessage(`Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`, 'ai');
                 console.error("Gemini API call failed after max retries:", lastError);
@@ -423,7 +462,7 @@
                 return;
             }
             
-            // 5. Extract grounding sources (Perplexity feature)
+            // 7. Extract grounding sources (Perplexity feature)
             let sources = [];
             const groundingMetadata = candidate.groundingMetadata;
             if (groundingMetadata && groundingMetadata.groundingAttributions) {
@@ -435,7 +474,7 @@
                     .filter(source => source.uri && source.title);
             }
 
-            // 6. Display AI response
+            // 8. Display AI response
             displayMessage(text, 'ai', sources);
             userInput.focus(); // Keep focus on input for quick follow-up
         }
