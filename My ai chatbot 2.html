@@ -83,9 +83,10 @@
                 <div class="max-w-xl p-3 rounded-lg rounded-tl-none text-gray-100 shadow-md chat-bubble-ai">
                     <div class="flex justify-between items-center mb-1">
                         <p class="font-semibold text-purple-300">Nexus Mind 2.0</p>
-                        <button class="text-xs text-purple-400 px-2 py-1 bg-transparent rounded-full flex items-center shadow-md cursor-default" disabled title="TTS requires a response first.">
-                            ✨ Listen
-                        </button>
+                        <!-- TTS is disabled due to API key restrictions -->
+                        <span class="text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default" title="Text-to-Speech is disabled due to API key incompatibility.">
+                            🚫 TTS Disabled
+                        </span>
                     </div>
                     <p>Hello! I am Nexus Mind 2.0, a fast hybrid model combining the best of conversational AI and real-time grounding. Ask me anything—from general knowledge to the latest facts!</p>
                 </div>
@@ -135,17 +136,15 @@
         }
 
         // Function to check if the API key input bar should be visible
-        // Since the key is hardcoded, this function now ensures the input container is always hidden.
         function checkApiKeyVisibility() {
              const container = document.getElementById('api-key-container');
-             // Ensure it's hidden as the key is embedded
              container.classList.add('hidden');
         }
         // End API Key Setup
 
-        // API Configurations (now using the getter function)
+        // API Configurations
         const CHAT_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
-        const TTS_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`;
+        // Removed TTS_BASE_PATH since the API key is incompatible with the TTS service.
 
 
         // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
@@ -160,131 +159,9 @@
 
         let isGenerating = false;
 
-        // --- TTS Utility Functions ---
-
-        function base64ToArrayBuffer(base64) {
-            const binaryString = atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        function writeString(s, view, offset) {
-            for (let i = 0; i < s.length; i++) {
-                view.setUint8(offset + i, s.charCodeAt(i));
-            }
-        }
-        
-        function pcmToWav(pcm16, sampleRate) {
-            const numChannels = 1;
-            const bitsPerSample = 16;
-            const blockAlign = numChannels * (bitsPerSample / 8);
-            const byteRate = sampleRate * blockAlign;
-            const dataSize = pcm16.length * (bitsPerSample / 8);
-            
-            const buffer = new ArrayBuffer(44 + dataSize);
-            const view = new DataView(buffer);
-
-            let offset = 0;
-            
-            writeString('RIFF', view, offset); offset += 4;
-            view.setUint32(offset, 36 + dataSize, true); offset += 4;
-            writeString('WAVE', view, offset); offset += 4;
-            
-            writeString('fmt ', view, offset); offset += 4;
-            view.setUint32(offset, 16, true); offset += 4;
-            view.setUint16(offset, 1, true); offset += 2;
-            view.setUint16(offset, numChannels, true); offset += 2;
-            view.setUint32(offset, sampleRate, true); offset += 4;
-            view.setUint32(offset, byteRate, true); offset += 4;
-            view.setUint16(offset, blockAlign, true); offset += 2;
-            view.setUint16(offset, bitsPerSample, true); offset += 2;
-            
-            writeString('data', view, offset); offset += 4;
-            view.setUint32(offset, dataSize, true); offset += 4;
-            
-            const pcm16Bytes = new Uint8Array(pcm16.buffer);
-            new Uint8Array(buffer, 44).set(pcm16Bytes);
-            
-            return new Blob([buffer], { type: 'audio/wav' });
-        }
-        
-        /**
-         * Generates and plays the TTS audio using the Gemini API.
-         */
-        async function generateTTS(textToSpeak, buttonElement) {
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = '<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
-            
-            const ttsPayload = {
-                contents: [{
-                    parts: [{ text: textToSpeak }]
-                }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: { voiceName: "Puck" } // Upbeat voice
-                        }
-                    }
-                },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-
-            try {
-                const response = await fetch(getApiUrl(TTS_BASE_PATH), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(ttsPayload)
-                });
-
-                if (!response.ok) throw new Error(`TTS API failed with status ${response.status}`);
-
-                const result = await response.json();
-                const part = result?.candidates?.[0]?.content?.parts?.[0];
-                const audioData = part?.inlineData?.data;
-                const mimeType = part?.inlineData?.mimeType;
-
-                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
-                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
-                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
-                    
-                    const pcmData = base64ToArrayBuffer(audioData);
-                    const pcm16 = new Int16Array(pcmData);
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    
-                    const audioUrl = URL.createObjectURL(wavBlob);
-                    const audio = new Audio(audioUrl);
-                    
-                    buttonElement.innerHTML = '🔊'; // Playing icon
-                    
-                    audio.onended = () => {
-                         buttonElement.innerHTML = '✨ Listen';
-                         buttonElement.disabled = false;
-                    };
-                    audio.play().catch(e => {
-                        console.error("Audio playback failed:", e);
-                        buttonElement.innerHTML = '⚠️ Error';
-                        buttonElement.disabled = false;
-                    });
-                    
-                } else {
-                     console.error("TTS service error: Invalid audio format received.");
-                     buttonElement.innerHTML = '⚠️ Error';
-                }
-
-            } catch (error) {
-                console.error("TTS generation error:", error);
-                buttonElement.innerHTML = '⚠️ Error';
-            } finally {
-                if (buttonElement.innerHTML.includes('Error')) {
-                    buttonElement.disabled = false;
-                }
-            }
-        }
+        // --- TTS Utility Functions (REMOVED) ---
+        // The TTS functions (base64ToArrayBuffer, writeString, pcmToWav, generateTTS) 
+        // have been removed to prevent the 401 UNAUTHENTICATED error.
 
         // --- Chat Functions ---
 
@@ -307,19 +184,20 @@
                 senderLabel.textContent = 'Nexus Mind 2.0';
                 headerDiv.appendChild(senderLabel);
 
-                const ttsButton = document.createElement('button');
-                ttsButton.className = 'text-xs text-purple-400 hover:text-white transition-colors disabled:opacity-50 px-2 py-1 bg-[#2a1c47] rounded-full flex items-center shadow-md';
-                ttsButton.innerHTML = '✨ Listen';
-                ttsButton.title = 'Text-to-Speech (TTS) powered by Gemini';
-                ttsButton.onclick = () => generateTTS(text, ttsButton); 
+                // Replaced TTS Button with a Disabled Text
+                const ttsStatus = document.createElement('span');
+                ttsStatus.className = 'text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default';
+                ttsStatus.textContent = '🚫 TTS Disabled';
+                ttsStatus.title = 'Text-to-Speech is disabled due to API key incompatibility.';
                 
-                headerDiv.appendChild(ttsButton);
+                headerDiv.appendChild(ttsStatus);
                 messageBubble.appendChild(headerDiv);
 
             }
             
             // Simple markdown-like rendering
             const content = document.createElement('div');
+            // Using a simple regex to replace **bold** and \n with <br>
             content.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
             messageBubble.appendChild(content);
 
@@ -438,7 +316,6 @@
                         await new Promise(resolve => setTimeout(resolve, delay));
                         continue;
                     } else {
-                        // Capture the specific 403 error message
                         lastError = `API Error: ${fetchResponse.status} - ${await fetchResponse.text()}`;
                         break; 
                     }
