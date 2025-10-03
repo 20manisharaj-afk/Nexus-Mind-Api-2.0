@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Mind 2.0 Chatbot (GPT, Claude, Perplexity Hybrid)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background */
+        }
+        .chat-bubble-user {
+            background-color: #1f4287; /* Slightly vibrant blue for user */
+        }
+        .chat-bubble-ai {
+            background-color: #21262d; /* Dark grey for AI */
+        }
+        /* Custom scrollbar for chat area */
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb {
+            background-color: #30363d;
+            border-radius: 4px;
+        }
+        #chat-messages::-webkit-scrollbar-track {
+            background-color: #161b22;
+        }
+        .citation-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            margin-top: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #9e7fec;
+            background-color: #2a1c47;
+            border: 1px solid #4a3473;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .citation-badge:hover {
+            background-color: #3b285f;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl h-[90vh] flex flex-col bg-[#161b22] shadow-2xl rounded-xl overflow-hidden border border-[#30363d]">
+        
+        <!-- Header -->
+        <header class="p-4 border-b border-[#30363d] flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-100">
+                Nexus Mind 2.0
+                <span class="text-xs font-normal text-purple-400 block sm:inline-block">(Hybrid GPT, Claude, Perplexity)</span>
+            </h1>
+            <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
+        </header>
+
+        <!-- Chat Messages Area -->
+        <main id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
+            <!-- Initial Welcome Message -->
+            <div class="flex justify-start">
+                <div class="max-w-xl p-3 rounded-lg rounded-tl-none text-gray-100 shadow-md chat-bubble-ai">
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="font-semibold text-purple-300">Nexus Mind 2.0</p>
+                        <button class="text-xs text-purple-400 px-2 py-1 bg-transparent rounded-full flex items-center shadow-md cursor-default" disabled title="TTS requires a response first.">
+                            ✨ Listen
+                        </button>
+                    </div>
+                    <p>Hello! I am Nexus Mind 2.0, a fast hybrid model combining the best of conversational AI and real-time grounding. Ask me anything—from general knowledge to the latest facts!</p>
+                </div>
+            </div>
+            <!-- Messages will be injected here -->
+        </main>
+
+        <!-- Input Area -->
+        <footer class="p-4 border-t border-[#30363d]">
+            <div class="relative">
+                <input
+                    type="text"
+                    id="user-input"
+                    placeholder="Ask Nexus Mind 2.0 a question..."
+                    class="w-full p-3 pr-16 text-gray-100 bg-[#21262d] border border-[#30363d] rounded-lg focus:ring-purple-500 focus:border-purple-500 transition-all"
+                    onkeydown="if(event.key === 'Enter') sendMessage()"
+                    autocomplete="off"
+                >
+                <button
+                    onclick="sendMessage()"
+                    id="send-button"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg transition-colors disabled:bg-purple-800 disabled:opacity-50"
+                >
+                    <svg id="send-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.534.957l5 1.429a1 1 0 001.169-1.409l-7-14z"></path></svg>
+                    <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-xs mt-2 text-gray-500 text-center sm:hidden">MADE BY ABHIRAJ</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // API Configuration
+        const apiKey = ""; // API Key will be automatically handled by the environment
+        const CHAT_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+        // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
+        const SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
+
+        // UI Elements
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const sendIcon = document.getElementById('send-icon');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        let isGenerating = false;
+
+        // --- TTS Utility Functions ---
+
+        // Function to convert Base64 string to ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Helper for pcmToWav
+        function writeString(s, view, offset) {
+            for (let i = 0; i < s.length; i++) {
+                view.setUint8(offset + i, s.charCodeAt(i));
+            }
+        }
+        
+        // Function to convert PCM audio data to WAV Blob (required for playback)
+        function pcmToWav(pcm16, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const blockAlign = numChannels * (bitsPerSample / 8);
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = pcm16.length * (bitsPerSample / 8);
+            
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            let offset = 0;
+            
+            // RIFF header
+            writeString('RIFF', view, offset); offset += 4;
+            view.setUint32(offset, 36 + dataSize, true); offset += 4; // ChunkSize
+            writeString('WAVE', view, offset); offset += 4;
+            
+            // FMT sub-chunk
+            writeString('fmt ', view, offset); offset += 4;
+            view.setUint32(offset, 16, true); offset += 4; // Subchunk1Size (16 for PCM)
+            view.setUint16(offset, 1, true); offset += 2; // AudioFormat (1 for PCM)
+            view.setUint16(offset, numChannels, true); offset += 2; // NumChannels
+            view.setUint32(offset, sampleRate, true); offset += 4; // SampleRate
+            view.setUint32(offset, byteRate, true); offset += 4; // ByteRate
+            view.setUint16(offset, blockAlign, true); offset += 2; // BlockAlign
+            view.setUint16(offset, bitsPerSample, true); offset += 2; // BitsPerSample
+            
+            // DATA sub-chunk
+            writeString('data', view, offset); offset += 4;
+            view.setUint32(offset, dataSize, true); offset += 4; // Subchunk2Size
+            
+            // PCM data
+            const pcm16Bytes = new Uint8Array(pcm16.buffer);
+            new Uint8Array(buffer, 44).set(pcm16Bytes);
+            
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+        
+        /**
+         * Generates and plays the TTS audio using the Gemini API.
+         * @param {string} textToSpeak - The text content to convert to speech.
+         * @param {HTMLButtonElement} buttonElement - The button triggering the action.
+         */
+        async function generateTTS(textToSpeak, buttonElement) {
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            
+            const ttsPayload = {
+                contents: [{
+                    parts: [{ text: textToSpeak }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Puck" } // Upbeat voice
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            try {
+                const response = await fetch(TTS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ttsPayload)
+                });
+
+                if (!response.ok) throw new Error(`TTS API failed with status ${response.status}`);
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    buttonElement.innerHTML = '🔊'; // Playing icon
+                    
+                    audio.onended = () => {
+                         buttonElement.innerHTML = '✨ Listen';
+                         buttonElement.disabled = false;
+                    };
+                    audio.play().catch(e => {
+                        console.error("Audio playback failed:", e);
+                        buttonElement.innerHTML = '⚠️ Error';
+                        buttonElement.disabled = false;
+                    });
+                    
+                } else {
+                     console.error("TTS service error: Invalid audio format received.");
+                     buttonElement.innerHTML = '⚠️ Error';
+                }
+
+            } catch (error) {
+                console.error("TTS generation error:", error);
+                buttonElement.innerHTML = '⚠️ Error';
+            } finally {
+                // If an error occurred, re-enable the button, otherwise it's handled by audio.onended
+                if (buttonElement.innerHTML.includes('Error')) {
+                    buttonElement.disabled = false;
+                }
+            }
+        }
+
+        // --- Chat Functions ---
+
+        /**
+         * Utility function to display a chat message.
+         * @param {string} text - The content of the message.
+         * @param {string} sender - 'user' or 'ai'.
+         * @param {Array<Object>} [sources=[]] - Array of source objects for AI response.
+         */
+        function displayMessage(text, sender, sources = []) {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = `max-w-xl p-3 rounded-xl shadow-lg text-gray-100 transition-all ${sender === 'user' ? 'chat-bubble-user rounded-br-none' : 'chat-bubble-ai rounded-tl-none'}`;
+
+            if (sender === 'ai') {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex justify-between items-center mb-1';
+
+                const senderLabel = document.createElement('p');
+                senderLabel.className = 'font-semibold text-purple-300';
+                senderLabel.textContent = 'Nexus Mind 2.0';
+                headerDiv.appendChild(senderLabel);
+
+                // ✨ LLM-powered TTS Feature Button
+                const ttsButton = document.createElement('button');
+                ttsButton.className = 'text-xs text-purple-400 hover:text-white transition-colors disabled:opacity-50 px-2 py-1 bg-[#2a1c47] rounded-full flex items-center shadow-md';
+                ttsButton.innerHTML = '✨ Listen';
+                ttsButton.title = 'Text-to-Speech (TTS) powered by Gemini';
+                // Pass the raw text (with \n) for clean reading
+                ttsButton.onclick = () => generateTTS(text, ttsButton); 
+                
+                headerDiv.appendChild(ttsButton);
+                messageBubble.appendChild(headerDiv);
+
+            }
+            
+            // Simple markdown-like rendering (basic line breaks for demonstration)
+            const content = document.createElement('div');
+            content.innerHTML = text.replace(/\n/g, '<br>'); // Replace \n for display
+            messageBubble.appendChild(content);
+
+            // Add sources/citations if present (Perplexity-like feature)
+            if (sender === 'ai' && sources.length > 0) {
+                const sourceContainer = document.createElement('div');
+                sourceContainer.className = 'mt-3 pt-3 border-t border-[#30363d] flex flex-wrap gap-2';
+
+                sources.forEach((source, index) => {
+                    const badge = document.createElement('a');
+                    badge.href = source.uri;
+                    badge.target = "_blank";
+                    badge.title = source.title;
+                    badge.className = 'citation-badge';
+                    badge.innerHTML = `
+                        <span class="mr-1">🔗</span>
+                        Source ${index + 1}
+                    `;
+                    sourceContainer.appendChild(badge);
+                });
+
+                messageBubble.appendChild(sourceContainer);
+            }
+
+            messageContainer.appendChild(messageBubble);
+            chatMessages.appendChild(messageContainer);
+
+            // Scroll to the latest message
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        /**
+         * Enables/disables the input and shows/hides the loading spinner.
+         * @param {boolean} loading
+         */
+        function setLoading(loading) {
+            isGenerating = loading;
+            sendButton.disabled = loading;
+            userInput.disabled = loading;
+            if (loading) {
+                sendIcon.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+            } else {
+                sendIcon.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Calls the Gemini API to get a response.
+         */
+        async function sendMessage() {
+            if (isGenerating) return;
+
+            const userText = userInput.value.trim();
+            if (!userText) return;
+
+            // 1. Display user message
+            displayMessage(userText, 'user');
+            userInput.value = ''; // Clear input
+            setLoading(true);
+
+            // 2. Construct API Payload (includes Google Search tool)
+            const payload = {
+                contents: [{ parts: [{ text: userText }] }],
+                tools: [{ "google_search": {} }], // Perplexity-like grounding
+                systemInstruction: {
+                    parts: [{ text: SYSTEM_PROMPT }] // Hybrid AI Persona
+                },
+            };
+
+            // 3. API Call with exponential backoff for robustness
+            const MAX_RETRIES = 3;
+            let response = null;
+            let lastError = null;
+
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                try {
+                    const fetchResponse = await fetch(CHAT_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (fetchResponse.ok) {
+                        response = await fetchResponse.json();
+                        break; // Success!
+                    } else if (fetchResponse.status === 429 || fetchResponse.status >= 500) {
+                        // Rate limit or server error - implement backoff
+                        lastError = `Server error (Status: ${fetchResponse.status})`;
+                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        // Other client-side errors (e.g., 400 Bad Request)
+                        lastError = `API Error: ${await fetchResponse.text()}`;
+                        break;
+                    }
+
+                } catch (error) {
+                    lastError = error.message;
+                    const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+
+            setLoading(false);
+
+            // 4. Process Response
+            if (!response) {
+                displayMessage(`Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`, 'ai');
+                console.error("Gemini API call failed after max retries:", lastError);
+                return;
+            }
+
+            const candidate = response.candidates?.[0];
+            const text = candidate?.content?.parts?.[0]?.text;
+
+            if (!text) {
+                displayMessage("I received an empty response. Please try asking again.", 'ai');
+                return;
+            }
+            
+            // 5. Extract grounding sources (Perplexity feature)
+            let sources = [];
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title);
+            }
+
+            // 6. Display AI response
+            displayMessage(text, 'ai', sources);
+            userInput.focus(); // Keep focus on input for quick follow-up
+        }
+
+        // Initialize focus on load
+        window.onload = () => {
+            userInput.focus();
+        }
+
+    </script>
+</body>
+</html>
