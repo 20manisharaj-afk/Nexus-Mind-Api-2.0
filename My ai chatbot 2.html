@@ -144,6 +144,11 @@
         </div>
     </div>
 
+    <!-- Footer for Credits -->
+    <footer class="w-full text-center py-2 text-xs text-gray-500 bg-white border-t border-gray-100">
+        UI & Concept designed by <span class="font-semibold text-indigo-600">Abhiraj Singh</span>. Powered by Gemini API.
+    </footer>
+
     <script>
         // --- CONSTANTS AND STATE ---
         const API_KEY_STORAGE_KEY = 'geminiApiKey';
@@ -175,6 +180,20 @@
         const modeSelector = document.getElementById('mode-selector');
 
         // --- UTILITY FUNCTIONS ---
+
+        /**
+         * Checks if the user's query is asking who developed the bot.
+         * @param {string} query The user's input.
+         * @returns {boolean} True if it's a creator query.
+         */
+        function isCreatorQuery(query) {
+            const lowerQuery = query.toLowerCase();
+            return lowerQuery.includes("who made you") ||
+                   lowerQuery.includes("who created you") ||
+                   lowerQuery.includes("your creator") ||
+                   lowerQuery.includes("your developer") ||
+                   lowerQuery.includes("who built you");
+        }
 
         // Function to convert role name for display
         function getRoleDisplay(role) {
@@ -643,6 +662,16 @@
             displayMessage(query, 'user', []);
             chatHistory.push({ role: "user", text: query });
             userInput.value = '';
+
+            // --- NEW LOGIC FOR CREDITS (Abhiraj Singh) ---
+            if (isCreatorQuery(query)) {
+                const creatorResponse = "I was conceptualized and developed by **Abhiraj Singh**.";
+                chatHistory.push({ role: "ai", text: creatorResponse });
+                displayMessage(creatorResponse, 'ai', []);
+                userInput.focus();
+                return; // Stop here, no API call needed
+            }
+            // --- END NEW LOGIC ---
 
             if (currentMode === MODE.IMAGINE) {
                 // 2. Handle image generation mode
