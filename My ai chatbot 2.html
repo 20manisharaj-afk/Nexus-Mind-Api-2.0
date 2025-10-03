@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Mind 2.0 Chatbot (Multi-Mode)</title>
+    <title>Nexus Mind 2.0 Chatbot (Premium)</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Highlight.js for code blocks -->
@@ -15,628 +15,670 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.5s ease;
+            height: 100vh;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
         }
 
-        /* Base styles for the dark mode look */
-        .chat-container {
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-primary);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: all 0.5s ease;
+        /* --- Global Animations --- */
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fadeInSlide {
+            animation: fadeInSlide 0.3s ease-out;
+        }
+        
+        /* Custom scrollbar for chat box */
+        #chat-box {
+            scrollbar-width: thin;
+            scrollbar-color: #4f46e5 #e5e7eb;
+        }
+        #chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-box::-webkit-scrollbar-track {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        #chat-box::-webkit-scrollbar-thumb {
+            background-color: #4f46e5;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
         }
 
-        /* Scrollbar styles (consistent across modes) */
-        #chat-messages::-webkit-scrollbar { width: 8px; }
-        #chat-messages::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb); border-radius: 4px; }
-        #chat-messages::-webkit-scrollbar-track { background-color: var(--scroll-track); }
-
-        .citation-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 6px;
-            margin-top: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border-radius: 9999px;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-            color: var(--citation-text);
-            background-color: var(--citation-bg);
-            border: 1px solid var(--citation-border);
-        }
-        .citation-badge:hover { background-color: var(--citation-hover); }
-
-        /* Mode-Specific Variables (Default to Narrative Mode) */
-        :root {
-            --bg-body: #0d1117;
-            --bg-primary: #161b22;
-            --bg-secondary: #21262d;
-            --border-color: #30363d;
-            --text-color: #e6e6e6;
-            --mode-highlight: #7c3aed; /* Purple */
-
-            --user-bubble: #1f4287;
-            --ai-bubble: #21262d;
-
-            --citation-text: #9e7fec;
-            --citation-bg: #2a1c47;
-            --citation-border: #4a3473;
-            --citation-hover: #3b285f;
-
-            --scroll-thumb: #30363d;
-            --scroll-track: #161b22;
+        /* Message styling adjustments */
+        .ai-message {
+            background-color: #f3f4f6; /* Subtle light gray */
+            border-left: 4px solid #4f46e5; /* Indigo accent */
+            color: #1f2937;
         }
 
-        /* --- CODE MODE (Monokai) --- */
-        .code-mode {
-            --bg-body: #1e1e1e; /* VS Code dark */
-            --bg-primary: #272822; /* Monokai background */
-            --bg-secondary: #3e3e3e;
-            --border-color: #555555;
-            --text-color: #f8f8f2;
-            --mode-highlight: #a6e22e; /* Neon Green */
-
-            --user-bubble: #4d7a18; /* Darker green */
-            --ai-bubble: #34352f;
-
-            --citation-text: #f92672; /* Pink */
-            --citation-bg: #3f3f39;
-            --citation-border: #f9267244;
-            --citation-hover: #4a4a44;
-
-            --scroll-thumb: #555555;
-            --scroll-track: #272822;
+        /* API Key status */
+        #api-key-status.valid {
+            background-color: #10b981; /* Emerald green */
+        }
+        #api-key-status.invalid {
+            background-color: #f59e0b; /* Amber */
         }
 
-        /* Apply variables */
-        body { background-color: var(--bg-body); color: var(--text-color); }
-        .chat-bubble-user { background-color: var(--user-bubble); }
-        .chat-bubble-ai { background-color: var(--ai-bubble); }
-        .chat-container { border-color: var(--border-color); background-color: var(--bg-primary); }
-        .chat-header-border { border-color: var(--border-color); }
-        .input-bg { background-color: var(--bg-secondary); border-color: var(--border-color); color: var(--text-color); }
-        .highlight-text { color: var(--mode-highlight); }
-        .highlight-bg { background-color: var(--mode-highlight); }
-        .input-focus:focus {
-            --tw-ring-color: var(--mode-highlight);
-            --tw-border-opacity: 1;
-            border-color: var(--mode-highlight);
+        /* Mode buttons */
+        .mode-btn {
+            @apply py-2 px-3 bg-white text-gray-700 font-semibold rounded-lg shadow-md transition duration-300 transform hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] border border-gray-200 text-sm;
         }
-
-        /* Global style for code blocks using hljs */
-        pre {
-            padding: 1rem;
-            margin-top: 0.5rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            background: #272822 !important; /* Ensure highlight.js background is correct in code mode */
+        .mode-btn.active {
+            @apply bg-indigo-600 text-white shadow-lg border-indigo-700;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-50 flex flex-col h-screen antialiased">
 
-    <div id="chat-app" class="w-full max-w-3xl h-[90vh] flex flex-col rounded-xl overflow-hidden chat-container">
+    <!-- API Key and Header -->
+    <div id="header" class="w-full bg-white shadow-lg p-4 flex justify-between items-center z-10">
+        <h1 class="text-3xl font-extrabold text-indigo-700 tracking-tight">Nexus Mind 2.0</h1>
         
-        <!-- Header -->
-        <header class="p-4 border-b chat-header-border flex items-center justify-between">
-            <h1 class="text-xl font-bold text-gray-100">
-                Nexus Mind 2.0 
-                <span id="mode-name" class="text-xs font-normal highlight-text block sm:inline-block">(Narrative Mode)</span>
-            </h1>
-            <div class="flex items-center space-x-3">
-                 <!-- New: Mode Toggle Button -->
-                <button
-                    onclick="toggleMode()"
-                    id="mode-toggle-button"
-                    class="p-2 text-sm text-gray-400 hover:text-white transition-colors bg-[var(--bg-secondary)] rounded-full shadow-md"
-                    title="Switch Mode: Narrative / Code"
-                >
-                    <svg id="mode-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <!-- Default icon: Sparkles for Narrative -->
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846m0 0-2.846-.813.813-.813m0 0 2.846.813m0 0 2.846-.813.813.813m0 0-2.846.813m0 0 2.846-.813M16.5 12h.008v.008H16.5V12Zm-4.5 0h.008v.008H12V12Zm-4.5 0h.008v.008H7.5V12Zm9-4.5h.008v.008H16.5V7.5Zm-4.5 0h.008v.008H12V7.5Zm-4.5 0h.008v.008H7.5V7.5Zm9 9h.008v.008H16.5v-.008Zm-4.5 0h.008v.008H12v-.008Zm-4.5 0h.008v.008H7.5v-.008Z" />
-                    </svg>
-                </button>
-                 <!-- Reset Button -->
-                <button
-                    onclick="resetChat()"
-                    class="p-2 text-sm text-gray-400 hover:text-red-400 transition-colors bg-[var(--bg-secondary)] rounded-full shadow-md"
-                    title="Start a new conversation (clears history)"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181-3.181m0 0l-3.182-3.182M19.049 9.348A10.002 10.002 0 0112 20.04c-3.79 0-7.382-1.748-9.849-4.757m0 0l-3.181 3.182m3.181-3.182M19.049 9.348l3.181-3.182M4.95 9.348C3.182 6.784 1.748 3.192 4.757.75c3.008-2.509 6.6-3.181 9.849-2.222" />
-                    </svg>
-                </button>
-                <p class="text-sm text-gray-400 hidden sm:block">MADE BY ABHIRAJ</p>
-            </div>
-        </header>
+        <div class="flex items-center space-x-4">
+            <!-- API Key Status Indicator -->
+            <span id="api-key-status" class="text-white text-xs font-bold px-3 py-1 rounded-full shadow-md transition duration-300 cursor-pointer" onclick="toggleApiKeyInput(true)">
+                API Key Status
+            </span>
 
-        <!-- API Key Info Bar -->
-        <div id="api-key-container" class="p-3 bg-green-900/50 border-b border-green-700/50">
-            <p class="text-sm font-medium text-green-300">
-                ✅ **SUCCESS!** Your API key is now configured. The chatbot is ready.
-            </p>
+            <!-- API Key Input Field (Hidden by default) -->
+            <div id="api-key-container" class="flex items-center space-x-2 transition-all duration-300 max-w-0 overflow-hidden opacity-0">
+                <input type="password" id="api-key-input" placeholder="Enter Gemini API Key" 
+                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 w-64">
+                <button onclick="saveApiKey()" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="flex-grow flex flex-col p-4 overflow-hidden relative">
+        
+        <!-- Mode Information -->
+        <div class="bg-indigo-50 p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center flex-wrap gap-3">
+            <div>
+                <h2 id="mode-title" class="text-xl font-bold text-indigo-800">NARRATIVE Mode</h2>
+                <p id="mode-description" class="text-sm text-indigo-600 mt-1">Chat naturally with the model. Grounding search is off.</p>
+            </div>
+            
+            <!-- Gemini-powered Summary Feature -->
+            <button id="summarize-btn" onclick="generateSummary()" class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm">
+                ✨ Summarize Chat
+            </button>
         </div>
 
-        <!-- Chat Messages Area -->
-        <main id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto">
-            <!-- Initial Welcome Message -->
-            <div id="welcome-message-container" class="flex justify-start">
-                <div class="max-w-xl p-3 rounded-lg rounded-tl-none shadow-md chat-bubble-ai">
-                    <div class="flex justify-between items-center mb-1">
-                        <p class="font-semibold highlight-text">Nexus Mind 2.0</p>
-                        <span class="text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default" title="Text-to-Speech is disabled due to API key incompatibility.">
-                            🚫 TTS Disabled
-                        </span>
-                    </div>
-                    <p>Hello! I am Nexus Mind 2.0, currently running in **Narrative Mode**. Ask me anything—from general knowledge to the latest facts!</p>
-                </div>
-            </div>
+        <!-- Chat History -->
+        <div id="chat-box" class="flex-grow overflow-y-auto space-y-4 pr-2 pb-4">
             <!-- Messages will be injected here -->
-        </main>
+        </div>
 
-        <!-- Input Area -->
-        <footer class="p-4 border-t chat-header-border">
-            <div class="relative">
-                <input
-                    type="text"
-                    id="user-input"
-                    placeholder="Ask Nexus Mind 2.0 a question..."
-                    class="w-full p-3 pr-16 rounded-lg focus:ring-2 input-focus input-bg transition-all"
-                    onkeydown="if(event.key === 'Enter') sendMessage()"
-                    autocomplete="off"
-                >
-                <button
-                    onclick="sendMessage()"
-                    id="send-button"
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 highlight-bg hover:opacity-80 text-white font-bold py-2 px-3 rounded-lg transition-colors disabled:opacity-50"
-                >
-                    <svg id="send-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.534.957l5 1.429a1 1 0 001.169-1.409l-7-14z"></path></svg>
-                    <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+        <!-- Mode Selector and Input Area -->
+        <div class="bg-white p-4 rounded-xl shadow-2xl flex flex-col space-y-3 z-10">
+            
+            <!-- Mode Selector -->
+            <div id="mode-selector" class="flex flex-wrap gap-2">
+                <button class="mode-btn active" data-mode="Narrative">💬 NARRATIVE</button>
+                <button class="mode-btn" data-mode="Coding">💻 CODING</button>
+                <button class="mode-btn" data-mode="Wiki">🌐 WIKI (Grounded)</button>
+                <button class="mode-btn" data-mode="Imagine">🖼️ IMAGINE (Image Gen)</button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="flex space-x-3">
+                <input type="text" id="user-input" placeholder="Ask a question..."
+                       class="flex-grow px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-inner transition duration-150">
+                <button id="send-btn" onclick="sendMessage()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    Send
                 </button>
             </div>
-            <p class="text-xs mt-2 text-gray-500 text-center sm:hidden">MADE BY ABHIRAJ</p>
-        </footer>
-
+        </div>
     </div>
 
     <script>
-        // --- API Key Setup ---
-        let GEMINI_API_KEY = 'AIzaSyBslOch6NMl2P5osM1F9rngfxm7fn5W0qM'; 
+        // --- CONSTANTS AND STATE ---
+        const API_KEY_STORAGE_KEY = 'geminiApiKey';
+        let GEMINI_API_KEY = '';
+        let chatHistory = [];
+        let currentMode = 'Narrative'; // Default mode
 
-        function getApiUrl(basePath) {
-            if (GEMINI_API_KEY) {
-                return `${basePath}?key=${GEMINI_API_KEY}`;
-            }
-            return basePath;
-        }
+        // API URLs
+        const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
+        const IMAGEN_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=";
+        const IMAGEN_MODEL_NAME = "Imagen 3.0";
+        const MAX_CHATS = 10; // Maximum number of messages to keep in history for context
 
-        function checkApiKeyVisibility() {
-             // The success message is now always visible
-        }
-        // End API Key Setup
-
-        // --- Mode & Theme Management ---
         const MODE = {
-            NARRATIVE: 'narrative',
-            CODE: 'code'
+            NARRATIVE: 'Narrative',
+            CODING: 'Coding',
+            WIKI: 'Wiki',
+            IMAGINE: 'Imagine' // New mode
         };
-        let currentMode = MODE.NARRATIVE;
 
-        const chatApp = document.getElementById('chat-app');
-        const modeName = document.getElementById('mode-name');
-        const modeToggleButton = document.getElementById('mode-toggle-button');
-        const modeIcon = document.getElementById('mode-icon');
-        const welcomeMessageContainer = document.getElementById('welcome-message-container');
+        // --- DOM ELEMENTS ---
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const modeTitle = document.getElementById('mode-title');
+        const modeDescription = document.getElementById('mode-description');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const apiKeyContainer = document.getElementById('api-key-container');
+        const apiKeyStatus = document.getElementById('api-key-status');
+        const modeSelector = document.getElementById('mode-selector');
+
+        // --- UTILITY FUNCTIONS ---
+
+        // Function to convert role name for display
+        function getRoleDisplay(role) {
+            switch (role) {
+                case 'user': return 'You';
+                case 'ai': return 'Nexus Mind';
+                case 'system': return 'System Message';
+                case 'error': return 'Error';
+                default: return 'Bot';
+            }
+        }
 
         /**
-         * Applies the selected theme and updates the UI elements.
+         * Converts markdown text to HTML, handles bold, italics, and code blocks.
+         * @param {string} text The markdown text.
+         * @returns {string} The HTML string.
          */
-        function applyMode(mode) {
-            currentMode = mode;
-            chatApp.classList.remove(MODE.NARRATIVE, MODE.CODE);
-            chatApp.classList.add(mode);
-            document.body.classList.remove(MODE.NARRATIVE, MODE.CODE);
-            document.body.classList.add(mode);
+        function formatMarkdown(text) {
+            // Escape HTML characters first
+            let html = text.replace(/&/g, '&amp;')
+                           .replace(/</g, '&lt;')
+                           .replace(/>/g, '&gt;');
 
-            if (mode === MODE.CODE) {
-                modeName.textContent = '(Code Mode)';
-                // VS Code Icon for Code Mode
-                modeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-3.75 16.5" />`;
-                modeToggleButton.title = "Switch Mode: Code / Narrative";
-                welcomeMessageContainer.innerHTML = createWelcomeMessage('Code Mode');
+            // 1. Code blocks (```language ... ```) - Handle these first to prevent interior formatting
+            html = html.replace(/```(\w+)?\n([\s\S]+?)```/g, (match, lang, code) => {
+                const codeBlock = `<pre><code class="${lang || 'plaintext'}">${code}</code></pre>`;
+                return codeBlock;
+            });
+
+            // 2. Bold
+            html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+            
+            // 3. Italics
+            html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+            
+            // 4. Newlines to breaks
+            html = html.replace(/\n/g, '<br>');
+
+            return html;
+        }
+
+        /**
+         * Creates and displays a message in the chat box.
+         * @param {string} text The message content.
+         * @param {string} role 'user', 'ai', 'system', or 'error'.
+         * @param {Array<Object>} sources Array of source objects for grounding.
+         */
+        function displayMessage(text, role, sources) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('flex', 'space-x-3', 'animate-fadeInSlide');
+            messageWrapper.setAttribute('data-role', role);
+
+            const avatar = document.createElement('div');
+            avatar.classList.add('w-8', 'h-8', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'text-xs', 'font-bold', 'flex-shrink-0');
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('p-4', 'rounded-xl', 'shadow-md', 'break-words', 'w-full', 'max-w-4xl', 'transition-all', 'duration-300', 'message-text-container');
+            
+            const roleDisplay = document.createElement('p');
+            roleDisplay.classList.add('text-sm', 'font-semibold', 'mb-1');
+
+            if (role === 'user') {
+                messageWrapper.classList.add('justify-end');
+                avatar.textContent = 'U';
+                avatar.classList.add('bg-gray-500', 'order-2');
+                messageBubble.classList.add('bg-indigo-500', 'text-white', 'order-1', 'rounded-br-none');
+                roleDisplay.textContent = getRoleDisplay(role);
+                roleDisplay.classList.add('text-indigo-200');
             } else {
-                modeName.textContent = '(Narrative Mode)';
-                // Sparkles Icon for Narrative Mode
-                modeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846m0 0-2.846-.813.813-.813m0 0 2.846.813m0 0 2.846-.813.813.813m0 0-2.846.813m0 0 2.846-.813M16.5 12h.008v.008H16.5V12Zm-4.5 0h.008v.008H12V12Zm-4.5 0h.008v.008H7.5V12Zm9-4.5h.008v.008H16.5V7.5Zm-4.5 0h.008v.008H12V7.5Zm-4.5 0h.008v.008H7.5V7.5Zm9 9h.008v.008H16.5v-.008Zm-4.5 0h.008v.008H12v-.008Zm-4.5 0h.008v.008H7.5v-.008Z" />`;
-                modeToggleButton.title = "Switch Mode: Narrative / Code";
-                welcomeMessageContainer.innerHTML = createWelcomeMessage('Narrative Mode');
+                messageWrapper.classList.add('justify-start');
+                avatar.textContent = role === 'ai' ? 'AI' : (role === 'system' ? '⚙️' : '🚨');
+                avatar.classList.add('bg-indigo-600', 'order-1');
+                messageBubble.classList.add('ai-message', 'rounded-tl-none', 'order-2');
+                
+                if (role === 'error') {
+                    messageBubble.classList.replace('ai-message', 'bg-red-100');
+                    messageBubble.style.borderLeftColor = '#ef4444';
+                    roleDisplay.textContent = getRoleDisplay(role);
+                    roleDisplay.classList.add('text-red-700');
+                    avatar.classList.replace('bg-indigo-600', 'bg-red-600');
+                } else {
+                    roleDisplay.textContent = getRoleDisplay(role);
+                    roleDisplay.classList.add('text-indigo-700');
+                }
             }
-            // Re-highlight all code blocks after mode change
-            document.querySelectorAll('pre code').forEach((block) => {
+
+            // Text content
+            const textContent = document.createElement('div');
+            textContent.classList.add('message-text', 'text-base', 'leading-relaxed');
+            textContent.innerHTML = formatMarkdown(text);
+            
+            messageBubble.appendChild(roleDisplay);
+            messageBubble.appendChild(textContent);
+
+            // Append parts
+            messageWrapper.appendChild(avatar);
+            messageWrapper.appendChild(messageBubble);
+
+            // Add Grounding Sources if present
+            if (sources && sources.length > 0) {
+                const sourcesDiv = document.createElement('div');
+                sourcesDiv.classList.add('mt-2', 'pt-2', 'border-t', 'border-gray-200', 'text-xs', 'text-gray-500', 'w-full');
+                sourcesDiv.innerHTML = '<strong>Sources:</strong> ' + sources.map(s => 
+                    `<a href="${s.uri}" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline">${s.title.substring(0, 50)}...</a>`
+                ).join(', ');
+                messageBubble.appendChild(sourcesDiv);
+            }
+
+            chatBox.appendChild(messageWrapper);
+            
+            // Highlight code blocks
+            messageBubble.querySelectorAll('pre code').forEach((block) => {
                 hljs.highlightElement(block);
             });
+
+            // Scroll to bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        /**
-         * Toggles between CODE and NARRATIVE modes.
-         */
-        function toggleMode() {
-            const newMode = currentMode === MODE.NARRATIVE ? MODE.CODE : MODE.NARRATIVE;
-            applyMode(newMode);
+        // Display welcome message on load
+        function displayWelcomeMessage() {
+            displayMessage("Hello! I'm Nexus Mind 2.0. Choose a mode to begin. Try the new 🖼️ IMAGINE mode or the ✨ Summarize Chat feature!", 'system', []);
         }
-        
-        // --- End Mode & Theme Management ---
 
-
-        // API Configurations
-        const CHAT_BASE_PATH = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`;
-        // TTS_BASE_PATH is removed as it's incompatible with API key authentication.
-
-
-        // System Instruction defining the hybrid persona (GPT + Claude + Perplexity)
-        const BASE_SYSTEM_PROMPT = "You are Nexus Mind 2.0, a cutting-edge, hybrid AI assistant. You combine the creative, conversational fluency, and reasoning of models like GPT and Claude, with the real-time, grounded search capabilities of models like Perplexity. Your responses must be friendly, insightful, and always factual, providing citations/sources when answering questions based on current or real-world information. Maintain a professional yet approachable tone. Format responses using Markdown for clarity.";
-
-        // --- UI & State ---
-        const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const sendIcon = document.getElementById('send-icon');
-        const loadingSpinner = document.getElementById('loading-spinner');
-
-        // Conversation History Array
-        let chatHistory = [];
-        const MAX_HISTORY_TURNS = 5;
-
-        let isGenerating = false;
-
-        /**
-         * Creates the welcome message HTML based on the current mode.
-         */
-        function createWelcomeMessage(modeText) {
-             return `
-                <div class="flex justify-start">
-                    <div class="max-w-xl p-3 rounded-lg rounded-tl-none shadow-md chat-bubble-ai">
-                        <div class="flex justify-between items-center mb-1">
-                            <p class="font-semibold highlight-text">Nexus Mind 2.0</p>
-                            <span class="text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default" title="Text-to-Speech is disabled due to API key incompatibility.">
-                                🚫 TTS Disabled
-                            </span>
-                        </div>
-                        <p>Hello! I am Nexus Mind 2.0, currently running in **${modeText}**. 
-                        ${modeText === 'Code Mode' 
-                            ? 'Ask me for code snippets, debugging help, or architectural advice. I will prioritize structured, highlighted code blocks.' 
-                            : 'Ask me anything—from general knowledge to the latest facts, and enjoy an immersive, conversational experience.'}
-                        </p>
-                    </div>
-                </div>
-            `;
+        // --- API KEY HANDLING ---
+        function updateApiKeyStatus(isValid) {
+            apiKeyStatus.textContent = isValid ? 'Key Valid (Click to Change)' : 'Key Missing/Invalid (Click to Enter)';
+            apiKeyStatus.classList.remove('valid', 'invalid');
+            apiKeyStatus.classList.add(isValid ? 'valid' : 'invalid');
         }
-        
-        /**
-         * Clears the chat history and resets the display.
-         */
-        function resetChat() {
-            if (isGenerating) return;
-            chatHistory = [];
-            chatMessages.innerHTML = ''; // Clear all displayed messages
-            
-            // Re-display the initial welcome message
-            chatMessages.innerHTML = createWelcomeMessage(currentMode === MODE.CODE ? 'Code Mode' : 'Narrative Mode');
+
+        function toggleApiKeyInput(show) {
+            if (show) {
+                apiKeyContainer.classList.remove('max-w-0', 'opacity-0');
+                apiKeyContainer.classList.add('max-w-screen-sm', 'opacity-100');
+                apiKeyInput.focus();
+            } else {
+                apiKeyContainer.classList.remove('max-w-screen-sm', 'opacity-100');
+                apiKeyContainer.classList.add('max-w-0', 'opacity-0');
+            }
+        }
+
+        function saveApiKey() {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                GEMINI_API_KEY = key;
+                localStorage.setItem(API_KEY_STORAGE_KEY, key);
+                updateApiKeyStatus(true);
+                toggleApiKeyInput(false);
+                displayMessage("API Key saved successfully. You can now use all modes!", 'system', []);
+            } else {
+                displayMessage("Please enter a valid API Key.", 'error', []);
+                updateApiKeyStatus(false);
+            }
+        }
+
+        // --- CHAT MODE LOGIC ---
+        modeSelector.addEventListener('click', (event) => {
+            const button = event.target.closest('.mode-btn');
+            if (button) {
+                const mode = button.getAttribute('data-mode');
+                applyMode(mode);
+                // Update active state
+                modeSelector.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+                });
+            }
+        });
+
+        function applyMode(mode) {
+            currentMode = mode;
+            chatHistory = []; // Clear history on mode switch
+
+            // Welcome message for new mode
+            displayWelcomeMessage(); 
+
+            switch (mode) {
+                case MODE.NARRATIVE:
+                    modeTitle.textContent = 'NARRATIVE Mode';
+                    modeDescription.innerHTML = 'Chat naturally with the model. Grounding search is off.';
+                    userInput.placeholder = 'e.g., Explain the concept of general relativity...';
+                    break;
+                case MODE.CODING:
+                    modeTitle.textContent = 'CODING Mode';
+                    modeDescription.innerHTML = 'Ask the model to generate, explain, or debug code snippets.';
+                    userInput.placeholder = 'e.g., Write a Python function for a quicksort algorithm...';
+                    break;
+                case MODE.WIKI:
+                    modeTitle.textContent = 'WIKI Mode (Grounded)';
+                    modeDescription.innerHTML = 'Ask real-time questions. Model uses Google Search for current, grounded information.';
+                    userInput.placeholder = 'e.g., What are the current top headlines in tech?';
+                    break;
+                case MODE.IMAGINE:
+                    modeTitle.textContent = `IMAGINE Mode (Image Generation)`;
+                    modeDescription.innerHTML = `Describe the image you want to create. Powered by ${IMAGEN_MODEL_NAME}. **Note: This does not use chat history context.**`;
+                    userInput.placeholder = 'e.g., A watercolor painting of a cat wearing a tiny crown...';
+                    break;
+                default:
+                    modeTitle.textContent = 'Unknown Mode';
+                    modeDescription.innerHTML = 'Please select a valid mode.';
+                    break;
+            }
             userInput.focus();
-            
-            // Temporary message to confirm reset
-            displayMessage('Conversation history cleared. Start a new topic now.', 'ai', [], true); 
         }
 
+        // --- GEMINI API CALL (TEXT GENERATION) ---
+
         /**
-         * Utility function to display a chat message.
-         * Includes Markdown parsing and code highlighting.
+         * Cleans up history and prepares content for the Gemini API call.
+         * @returns {Array<Object>} The cleaned chat history.
          */
-        function displayMessage(text, sender, sources = [], isEphemeral = false) {
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+        function getApiHistory() {
+            // Filter out system and error messages and limit history size
+            const conversation = chatHistory
+                .filter(msg => msg.role !== 'system' && msg.role !== 'error')
+                .slice(-MAX_CHATS * 2); // Keep last N user/model turns
 
-            const messageBubble = document.createElement('div');
-            messageBubble.className = `max-w-full md:max-w-xl p-3 rounded-xl shadow-lg transition-all ${sender === 'user' ? 'chat-bubble-user rounded-br-none' : 'chat-bubble-ai rounded-tl-none'}`;
-            messageBubble.style.color = 'var(--text-color)';
+            // Map the simple history objects to the API's required format
+            return conversation.map(msg => ({
+                role: msg.role === 'ai' ? 'model' : 'user',
+                parts: [{ text: msg.text }]
+            }));
+        }
 
-
-            if (sender === 'ai') {
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'flex justify-between items-center mb-1';
-
-                const senderLabel = document.createElement('p');
-                senderLabel.className = 'font-semibold highlight-text';
-                senderLabel.textContent = 'Nexus Mind 2.0';
-                headerDiv.appendChild(senderLabel);
-
-                // Disabled TTS Text
-                const ttsStatus = document.createElement('span');
-                ttsStatus.className = 'text-xs text-red-400 px-2 py-1 bg-[#471c1c] rounded-full flex items-center shadow-md cursor-default';
-                ttsStatus.textContent = '🚫 TTS Disabled';
-                ttsStatus.title = 'Text-to-Speech is disabled due to API key incompatibility.';
-                
-                headerDiv.appendChild(ttsStatus);
-                messageBubble.appendChild(headerDiv);
+        async function handleTextMode(query) {
+            if (!GEMINI_API_KEY) {
+                displayMessage("Please enter your API Key before sending a message.", 'error', []);
+                return;
             }
-            
-            // --- Markdown Rendering & Code Highlighting ---
-            
-            // Basic HTML conversion
-            let htmlContent = text.replace(/\n/g, '<br>');
-            htmlContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            const content = document.createElement('div');
-            
-            // Handle code blocks using a simple approach, replacing triple backticks with pre/code
-            const codeBlockRegex = /```(\w+)?\n([\s\S]+?)\n```/g;
-            let parts = htmlContent.split(codeBlockRegex);
 
-            let currentText = '';
-            
-            for (let i = 0; i < parts.length; i++) {
-                if (i % 4 === 0) {
-                    // Regular text part
-                    currentText += parts[i];
-                } else if (i % 4 === 1) {
-                    // Language (parts[i]) - skip this, used for next part
-                } else if (i % 4 === 2) {
-                    // Code content (parts[i])
-                    
-                    // Flush preceding text
-                    if (currentText.trim() !== '') {
-                        const textElement = document.createElement('p');
-                        textElement.innerHTML = currentText.trim();
-                        content.appendChild(textElement);
-                        currentText = '';
-                    }
+            const apiHistory = getApiHistory();
+            apiHistory.push({ role: "user", parts: [{ text: query }] });
 
-                    const lang = parts[i - 1] || 'plaintext';
-                    const code = parts[i];
-                    
-                    const pre = document.createElement('pre');
-                    const codeBlock = document.createElement('code');
-                    codeBlock.classList.add('hljs', lang);
-                    codeBlock.textContent = code.trim();
-                    pre.appendChild(codeBlock);
-                    content.appendChild(pre);
+            let systemPrompt = "You are a friendly, helpful, and insightful AI assistant. You respond clearly and concisely. Use markdown for formatting.";
+            let tools = [];
 
-                    // Highlight the code block immediately
-                    hljs.highlightElement(codeBlock);
-                }
+            if (currentMode === MODE.CODING) {
+                systemPrompt = "You are an expert software developer. Respond with code snippets using markdown code blocks and clear explanations. Focus on the requested language/task.";
+            } else if (currentMode === MODE.WIKI) {
+                systemPrompt = "You are a current events and knowledge expert. Use Google Search grounding to ensure your answers are factual and up-to-date. Provide short, clear responses and cite your sources.";
+                tools = [{ "google_search": {} }];
             }
-            
-            // Flush any remaining text
-            if (currentText.trim() !== '') {
-                const textElement = document.createElement('p');
-                textElement.innerHTML = currentText.trim();
-                content.appendChild(textElement);
-            }
-            
-            messageBubble.appendChild(content);
 
-            // Add sources/citations
-            if (sender === 'ai' && sources.length > 0) {
-                const sourceContainer = document.createElement('div');
-                sourceContainer.className = 'mt-3 pt-3 border-t chat-header-border flex flex-wrap gap-2';
-
-                sources.forEach((source, index) => {
-                    const badge = document.createElement('a');
-                    badge.href = source.uri;
-                    badge.target = "_blank";
-                    badge.title = source.title;
-                    badge.className = 'citation-badge';
-                    badge.innerHTML = `
-                        <span class="mr-1">🔗</span>
-                        Source ${index + 1}
-                    `;
-                    sourceContainer.appendChild(badge);
+            const apiUrl = `${GEMINI_API_BASE_URL}${GEMINI_API_KEY}`;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: apiHistory,
+                        tools: tools.length > 0 ? tools : undefined,
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                    })
                 });
 
-                messageBubble.appendChild(sourceContainer);
-            }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                }
 
-            messageContainer.appendChild(messageBubble);
-            chatMessages.appendChild(messageContainer);
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
 
-            // Add to history only if not ephemeral and sender is AI
-            if (!isEphemeral && sender === 'ai') {
-                 // The user message was already pushed to history right before the API call
-                 chatHistory[chatHistory.length - 1].parts.push({ text: text });
-            }
-        }
-        
-        /**
-         * Checks the user input against a list of triggers for the creator's name.
-         */
-        function checkHardcodedResponse(userText) {
-            const normalizedText = userText.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-            
-            const creatorTriggers = [
-                "who made you", "who is your creator", "who created you",
-                "made by", "who developed you", "your developer",
-                "creator name", "who is abhiraj", "who is abhiraj singh"
-            ];
-
-            if (creatorTriggers.some(trigger => normalizedText.includes(trigger))) {
-                displayMessage("I am a cutting-edge hybrid AI, Nexus Mind 2.0, and I was created by **Abhiraj Singh**.", 'ai');
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * Enables/disables the input and shows/hides the loading spinner.
-         */
-        function setLoading(loading) {
-            isGenerating = loading;
-            sendButton.disabled = loading;
-            userInput.disabled = loading;
-            if (loading) {
-                sendIcon.classList.add('hidden');
-                loadingSpinner.classList.remove('hidden');
-            } else {
-                sendIcon.classList.remove('hidden');
-                loadingSpinner.classList.add('hidden');
-            }
-        }
-        
-        /**
-         * Gets the system instruction based on the current mode.
-         */
-        function getSystemPrompt() {
-            let modeInstruction = "";
-            if (currentMode === MODE.CODE) {
-                modeInstruction = "Your current priority is CODE GENERATION. Use code blocks (` ```language...``` `) extensively for all output, even short snippets. Adopt a precise, technical, and highly structured tone. If asked for code, provide complete, runnable examples.";
-            } else {
-                modeInstruction = "Your current priority is NARRATIVE AND CONVERSATION. Use a descriptive, engaging, and friendly tone. Minimize the use of code blocks unless explicitly requested or necessary for clarity.";
-            }
-            return `${BASE_SYSTEM_PROMPT} ${modeInstruction}`;
-        }
-
-        /**
-         * Calls the Gemini API to get a response.
-         */
-        async function sendMessage() {
-            if (isGenerating) return;
-
-            if (!GEMINI_API_KEY) {
-                displayMessage("Error: The API Key is still missing. Please ensure your key is correctly pasted in the script.", 'ai');
-                return;
-            }
-
-
-            const userText = userInput.value.trim();
-            if (!userText) return;
-            
-            // 1. Display user message
-            displayMessage(userText, 'user');
-            userInput.value = '';
-            
-            // 2. Add user message to history
-            chatHistory.push({ role: "user", parts: [{ text: userText }] });
-
-            // 3. Trim history to the last MAX_HISTORY_TURNS
-            // We use chatHistory.length > MAX_HISTORY_TURNS * 2 because we push
-            // the user message (1) and then the AI response (1) making 2 entries per turn.
-            if (chatHistory.length > MAX_HISTORY_TURNS * 2) {
-                chatHistory = chatHistory.slice(chatHistory.length - (MAX_HISTORY_TURNS * 2));
-            }
-
-
-            // 4. Hardcoded Response Check
-            if (checkHardcodedResponse(userText)) {
-                chatHistory.pop(); // Remove user message if hardcoded response is used
-                userInput.focus();
-                return;
-            }
-
-
-            // 5. Start Loading
-            setLoading(true);
-            
-            // 6. Construct API Payload with history and dynamic system prompt
-            const payload = {
-                contents: chatHistory, 
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: getSystemPrompt() }]
-                },
-            };
-
-            // 7. API Call with exponential backoff
-            const MAX_RETRIES = 3;
-            let response = null;
-            let lastError = null;
-
-            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-                try {
-                    const fetchResponse = await fetch(getApiUrl(CHAT_BASE_PATH), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (fetchResponse.ok) {
-                        response = await fetchResponse.json();
-                        break;
-                    } else if (fetchResponse.status === 429 || fetchResponse.status >= 500) {
-                        lastError = `Server error (Status: ${fetchResponse.status})`;
-                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        continue;
-                    } else {
-                        lastError = `API Error: ${fetchResponse.status} - ${await fetchResponse.text()}`;
-                        break; 
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    
+                    // 6. Extract grounding sources
+                    let sources = [];
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
                     }
 
-                } catch (error) {
-                    lastError = error.message;
-                    const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-            }
-
-            setLoading(false);
-
-            // 8. Process Response
-            if (!response) {
-                let errorText = `Sorry, I couldn't get a response. Error: ${lastError || "Unknown error occurred."}`;
-                
-                if (lastError.includes("401") || lastError.includes("403")) {
-                    errorText = `
-                        Sorry, I encountered an **Authentication Error (401/403)**. 
-                        The key is present, but the **Generative Language API** is likely not enabled in your Google Cloud Project.
-                        Please enable the API service to fix this.
-                    `;
+                    // 7. Store and Display AI response
+                    chatHistory.push({ role: "ai", text: text });
+                    displayMessage(text, 'ai', sources);
+                    userInput.focus();
+                } else {
+                    displayMessage("The model returned an empty response. Please try rephrasing your query.", 'error', []);
                 }
 
-                chatHistory.pop(); 
-                displayMessage(errorText, 'ai');
-                console.error("Gemini API call failed after max retries:", lastError);
-                return;
+            } catch (error) {
+                console.error("Gemini API error:", error);
+                displayMessage(`Request failed: ${error.message.substring(0, 150)}... Check console for full details.`, 'error', []);
             }
-
-            const candidate = response.candidates?.[0];
-            const text = candidate?.content?.parts?.[0]?.text;
-
-            if (!text) {
-                chatHistory.pop(); 
-                displayMessage("I received an empty response. Please try asking again.", 'ai');
-                return;
-            }
-            
-            // 9. Add AI response to history
-            chatHistory.push({ role: "model", parts: [{ text: text }] });
-            
-            // 10. Extract grounding sources
-            let sources = [];
-            const groundingMetadata = candidate.groundingMetadata;
-            if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                sources = groundingMetadata.groundingAttributions
-                    .map(attribution => ({
-                        uri: attribution.web?.uri,
-                        title: attribution.web?.title,
-                    }))
-                    .filter(source => source.uri && source.title);
-            }
-
-            // 11. Display AI response
-            displayMessage(text, 'ai', sources);
-            userInput.focus();
         }
+
+        // --- IMAGEN API CALL (IMAGE GENERATION) ---
+
+        /**
+         * Handles the image generation request using Imagen 3.0.
+         * @param {string} prompt The user's image description.
+         */
+        async function handleImagineMode(prompt) {
+            if (!GEMINI_API_KEY) {
+                displayMessage("Please enter your API Key to use image generation.", 'error', []);
+                return;
+            }
+
+            displayMessage(`Generating image for: "${prompt}"...`, 'system', []);
+
+            // The payload for Imagen 3.0
+            const payload = {
+                instances: [{ prompt: prompt }],
+                parameters: { "sampleCount": 1 }
+            };
+
+            const apiUrl = `${IMAGEN_API_BASE_URL}${GEMINI_API_KEY}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+                const base64Data = result?.predictions?.[0]?.bytesBase64Encoded;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    displayImageMessage(imageUrl, prompt);
+                } else {
+                    displayMessage("Image generation failed. The model returned no image data.", 'error', []);
+                }
+
+            } catch (error) {
+                console.error("Image generation error:", error);
+                displayMessage(`Image generation failed due to an error. Check console for details. Error: ${error.message.substring(0, 150)}...`, 'error', []);
+            }
+        }
+
+        /**
+         * Displays the generated image in the chat box.
+         * @param {string} imageUrl The base64 image URL.
+         * @param {string} prompt The prompt used to generate the image.
+         */
+        function displayImageMessage(imageUrl, prompt) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('flex', 'space-x-3', 'animate-fadeInSlide', 'justify-start');
+            messageWrapper.setAttribute('data-role', 'ai');
+
+            const avatar = document.createElement('div');
+            avatar.textContent = 'AI';
+            avatar.classList.add('w-8', 'h-8', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'text-xs', 'font-bold', 'flex-shrink-0', 'bg-indigo-600');
+            
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('p-4', 'rounded-xl', 'shadow-md', 'break-words', 'w-full', 'max-w-md', 'transition-all', 'duration-300', 'bg-gray-100', 'border-l-4', 'border-indigo-500');
+
+            const promptTitle = document.createElement('p');
+            promptTitle.classList.add('text-sm', 'text-gray-600', 'mb-2', 'font-medium');
+            promptTitle.textContent = `Generated Image: "${prompt}"`;
+            messageContainer.appendChild(promptTitle);
+
+            const imageElement = document.createElement('img');
+            imageElement.src = imageUrl;
+            imageElement.alt = prompt;
+            imageElement.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'shadow-xl', 'mt-2', 'border-2', 'border-indigo-500/50');
+            imageElement.onerror = () => {
+                imageElement.style.display = 'none';
+                const errorText = document.createElement('p');
+                errorText.classList.add('text-red-500');
+                errorText.textContent = 'Could not load the generated image.';
+                messageContainer.appendChild(errorText);
+            };
+            
+            messageContainer.appendChild(imageElement);
+            messageWrapper.appendChild(avatar);
+            messageWrapper.appendChild(messageContainer);
+            
+            chatBox.appendChild(messageWrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- GEMINI API CALL (SUMMARY FEATURE) ---
+
+        /**
+         * Generates a summary of the current chat history using Gemini.
+         */
+        async function generateSummary() {
+            if (!GEMINI_API_KEY) {
+                displayMessage("Please enter your API Key to use the summary feature.", 'error', []);
+                return;
+            }
+
+            // Extract visible conversation history from the DOM for the most accurate view
+            const historyElements = document.querySelectorAll('#chat-box > div:not([data-role="system"]):not([data-role="error"])');
+            if (historyElements.length < 2) {
+                displayMessage("No conversation detected to summarize. Send a few messages first!", 'system', []);
+                return;
+            }
+
+            displayMessage("Generating summary of the conversation...", 'system', []);
+
+            const conversation = Array.from(historyElements).map(el => {
+                const role = el.getAttribute('data-role');
+                const textElement = el.querySelector('.message-text');
+                // The text is stored in innerHTML with <br>s for newlines, so we extract textContent
+                const text = textElement ? textElement.textContent.trim() : ''; 
+                // Map 'user' and 'ai' roles to 'user' and 'model' for the API
+                const apiRole = role === 'user' ? 'user' : 'model';
+                return { role: apiRole, parts: [{ text: text }] };
+            }).filter(msg => msg.parts[0].text.length > 0);
+            
+            // Limit to the last N turns for efficiency
+            const limitedConversation = conversation.slice(-MAX_CHATS * 2);
+
+            const systemPrompt = "You are a concise summary generator. Based on the provided conversation history, generate a single, clear, and well-structured paragraph that summarizes the main topics and conclusions. Focus on key information.";
+            const userQuery = "Please summarize the preceding conversation.";
+
+            // Append the final user query to the conversation
+            const fullContents = [...limitedConversation, { role: 'user', parts: [{ text: userQuery }] }];
+
+            const apiUrl = `${GEMINI_API_BASE_URL}${GEMINI_API_KEY}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: fullContents,
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        },
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+                const summaryText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (summaryText) {
+                    displayMessage(`**Conversation Summary:**\n${summaryText}`, 'ai', []);
+                } else {
+                    displayMessage("Summary generation failed. The model returned no text.", 'error', []);
+                }
+
+            } catch (error) {
+                console.error("Summary generation error:", error);
+                displayMessage(`Summary generation failed: ${error.message.substring(0, 150)}...`, 'error', []);
+            }
+        }
+
+
+        // --- MAIN SEND LOGIC ---
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            if (!query) return;
+
+            // 1. Display user message
+            displayMessage(query, 'user', []);
+            chatHistory.push({ role: "user", text: query });
+            userInput.value = '';
+
+            if (currentMode === MODE.IMAGINE) {
+                // 2. Handle image generation mode
+                await handleImagineMode(query);
+                return; // Stop further processing for Imagine mode
+            }
+            
+            // 3. Handle text generation modes (NARRATIVE, CODING, WIKI)
+            await handleTextMode(query);
+        }
+
+        // Add event listener for Enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
 
         // Initialize focus and API key check on load
         window.onload = () => {
-            checkApiKeyVisibility();
-            applyMode(MODE.NARRATIVE); // Initialize with Narrative Mode
+            // Load key from storage
+            const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+            if (storedKey) {
+                GEMINI_API_KEY = storedKey;
+                apiKeyInput.value = storedKey;
+                updateApiKeyStatus(true);
+            } else {
+                updateApiKeyStatus(false);
+                toggleApiKeyInput(true); // Automatically show input on first load if key is missing
+            }
+
+            // Initializing applyMode will automatically show the welcome message
+            applyMode(MODE.NARRATIVE); 
+            // Select the initial mode button as active
+            document.querySelector(`.mode-btn[data-mode="${MODE.NARRATIVE}"]`).classList.add('active');
             userInput.focus();
         }
     </script>
