@@ -3,511 +3,559 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Mind 2.0 Chatbot (Premium)</title>
+    <title>NEXUS AI 3.0 Pro</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Highlight.js for code blocks -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    
-    <!-- Use Inter font -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        /* Custom styles for a deep space dark, futuristic aesthetic with Pro glow */
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.5s ease;
-            height: 100vh;
-            overflow: hidden;
-            padding: 0;
-            margin: 0;
+            background: #080C14; /* Deep space dark background */
+            color: #E2E8F0; /* Off-white text */
+            transition: all 0.3s ease-in-out;
         }
-
-        /* --- Global Animations --- */
-        @keyframes fadeInSlide {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .main-card {
+            background-color: #1A202C; /* Slightly lighter card background */
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            border: 1px solid #2D3748;
         }
-        .animate-fadeInSlide {
-            animation: fadeInSlide 0.3s ease-out;
+        .pro-glow {
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), 0 0 10px rgba(255, 215, 0, 0.2);
+            border-color: #FFD700;
         }
-        
-        /* Custom scrollbar for chat box */
-        #chat-box {
+        .chat-container {
+            max-height: 60vh;
+            overflow-y: scroll;
+            scroll-behavior: smooth;
+            /* Custom Scrollbar for style */
             scrollbar-width: thin;
-            scrollbar-color: #4f46e5 #e5e7eb;
+            scrollbar-color: #3D5AFE #1A202C;
         }
-        #chat-box::-webkit-scrollbar {
+        .chat-container::-webkit-scrollbar {
             width: 8px;
         }
-        #chat-box::-webkit-scrollbar-track {
-            background: #e5e7eb;
-            border-radius: 10px;
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #3D5AFE;
+            border-radius: 4px;
         }
-        #chat-box::-webkit-scrollbar-thumb {
-            background-color: #4f46e5;
-            border-radius: 10px;
-            border: 2px solid #e5e7eb;
+        .chat-container::-webkit-scrollbar-track {
+            background: #1A202C;
         }
-
-        /* Message styling adjustments */
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            transition: all 0.3s ease;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #4F46E5, #3B82F6); /* Rich purple-blue gradient */
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+            margin-left: auto; /* Push to the right */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
         .ai-message {
-            background-color: #f3f4f6; /* Subtle light gray */
-            border-left: 4px solid #4f46e5; /* Indigo accent */
-            color: #1f2937;
+            background-color: #2D3748; /* Darker AI bubble */
+            color: #E2E8F0;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #4A5568;
+        }
+        .pro-message {
+            background: linear-gradient(135deg, #FFD700, #FFA500); /* Gold/Orange Pro gradient */
+            color: #1A202C;
+            border: 1px solid #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        .recipe-card {
+            background: #1A202C;
+            border: 2px solid #3D5AFE;
+            border-radius: 16px;
+            box-shadow: 0 0 20px rgba(61, 90, 254, 0.2);
+            padding: 1.5rem;
         }
 
-        /* API Key status */
-        #api-key-status.valid {
-            background-color: #10b981; /* Emerald green */
+        /* --- Animations --- */
+        @keyframes pulse-pro {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.5); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
         }
-        #api-key-status.invalid {
-            background-color: #f59e0b; /* Amber */
+        .pro-pulse-button {
+            animation: pulse-pro 2s infinite;
+        }
+        .loading-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #3D5AFE;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
         }
 
-        /* Mode buttons */
-        .mode-btn {
-            @apply py-2 px-3 bg-white text-gray-700 font-semibold rounded-lg shadow-md transition duration-300 transform hover:bg-indigo-50 hover:scale-[1.02] active:scale-[0.98] border border-gray-200 text-sm;
+        /* Style for the text-to-speech icon */
+        .tts-icon {
+            cursor: pointer;
+            color: #60A5FA;
+            margin-left: 10px;
+            font-size: 1.2em;
+            transition: transform 0.15s ease-in-out;
         }
-        .mode-btn.active {
-            @apply bg-indigo-600 text-white shadow-lg border-indigo-700;
+        .tts-icon:hover {
+            color: #3B82F6;
+            transform: scale(1.1);
+        }
+        /* Mode Selector Styling */
+        .mode-button-group {
+            background-color: #2D3748;
+            border-radius: 25px;
+            padding: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .mode-button {
+            @apply px-4 py-1.5 text-xs rounded-full transition duration-300 font-medium whitespace-nowrap;
+        }
+        .mode-button-inactive {
+            @apply bg-transparent text-gray-400 hover:bg-gray-700/50;
+        }
+        .mode-button-active {
+            @apply bg-blue-600 text-white shadow-lg shadow-blue-500/30;
+        }
+        .mode-button-pro-locked {
+            @apply bg-gray-700 text-yellow-600 border border-yellow-600/50 cursor-not-allowed opacity-50;
+        }
+        .mode-button-pro-active {
+            @apply bg-yellow-600 text-gray-900 shadow-lg shadow-yellow-500/30 font-bold;
+        }
+        .cta-button {
+            @apply bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01];
         }
     </style>
 </head>
-<body class="bg-gray-50 flex flex-col h-screen antialiased">
+<body class="min-h-screen flex flex-col p-4">
 
-    <!-- API Key and Header -->
-    <div id="header" class="w-full bg-white shadow-lg p-4 flex justify-between items-center z-10">
-        <h1 class="text-3xl font-extrabold text-indigo-700 tracking-tight">Nexus Mind 2.0</h1>
+    <!-- Main Application Container -->
+    <div class="flex flex-col w-full max-w-3xl mx-auto flex-grow main-card p-4 sm:p-6">
+
+        <!-- Header -->
+        <header class="pb-4 mb-4 border-b border-gray-700/50">
+            <div class="flex justify-between items-center">
+                <h1 id="app-title" class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 transition duration-500">
+                    NEXUS AI 3.0
+                </h1>
+                
+                <!-- Pro Status / Toggle -->
+                <button id="pro-toggle" onclick="toggleProAccess()"
+                    class="px-4 py-2 bg-yellow-600 text-gray-900 text-sm font-semibold rounded-full shadow-lg transition duration-300 hover:bg-yellow-500 pro-pulse-button flex items-center">
+                    <span id="pro-status-icon" class="mr-2">👑</span>
+                    <span id="pro-status-text">Simulate Pro Access (Free)</span>
+                </button>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+                <p id="version-text" class="text-sm text-gray-400">Advanced Thinking & Structured Output - Standard</p>
+            </div>
+        </header>
         
-        <div class="flex items-center space-x-4">
-            <!-- API Key Status Indicator -->
-            <span id="api-key-status" class="text-white text-xs font-bold px-3 py-1 rounded-full shadow-md transition duration-300 cursor-pointer" onclick="toggleApiKeyInput(true)">
-                API Key Status
-            </span>
-
-            <!-- API Key Input Field (Hidden by default) -->
-            <div id="api-key-container" class="flex items-center space-x-2 transition-all duration-300 max-w-0 overflow-hidden opacity-0">
-                <input type="password" id="api-key-input" placeholder="Enter Gemini API Key" 
-                       class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500 w-64">
-                <button onclick="saveApiKey()" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-semibold transition duration-300">Save</button>
+        <!-- Mode Selector (Stylish Pill Container) -->
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between py-2 border-b border-gray-800/50">
+            <h3 class="text-sm text-gray-400 font-semibold mb-2 sm:mb-0">
+                Mode: <span id="current-mode-display" class="text-blue-400 font-bold">Classic Chat</span>
+            </h3>
+            <div class="flex flex-wrap gap-2 mode-button-group">
+                <button onclick="changeMode('Classic Chat')" id="mode-classic-chat" class="mode-button mode-button-active">Classic Chat</button>
+                <button onclick="changeMode('Canvas Creator')" id="mode-canvas-creator" class="mode-button mode-button-inactive">Canvas Creator</button>
+                <button onclick="changeMode('Code Debugger')" id="mode-code-debugger" class="mode-button mode-button-inactive">Code Debugger</button>
+                <button onclick="changeMode('Meal Planner')" id="mode-meal-planner" class="mode-button mode-button-inactive">Meal Planner</button>
+                <button onclick="changeMode('Image Editor')" id="mode-image-editor" class="mode-button mode-button-pro-locked">👑 Image Editor (Pro)</button>
             </div>
         </div>
-    </div>
 
-    <!-- Main Chat Area -->
-    <div class="flex-grow flex flex-col p-4 overflow-hidden relative">
-        
-        <!-- Mode Information -->
-        <div class="bg-indigo-50 p-4 rounded-xl shadow-inner mb-4 flex justify-between items-center flex-wrap gap-3">
-            <div>
-                <h2 id="mode-title" class="text-xl font-bold text-indigo-800">NARRATIVE Mode</h2>
-                <p id="mode-description" class="text-sm text-indigo-600 mt-1">Chat naturally with the model. Grounding search is off.</p>
+        <!-- Chat Display Area -->
+        <div id="chat-messages" class="chat-container flex-grow overflow-y-auto pr-2 mb-4">
+            <!-- Initial AI Greeting -->
+            <div class="flex justify-start">
+                <div class="message-bubble ai-message">
+                    Welcome to NEXUS 3.0 Standard. Click the 'Simulate Pro Access' button to unlock **Gemini 2.5 Pro** model performance and the **Image Editor** mode!
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="mt-auto">
+            
+            <!-- Image Upload & Preview (Multimodal Input) -->
+            <div id="image-upload-area" class="mb-3 p-3 bg-gray-800 border border-gray-700 rounded-xl transition duration-300">
+                <label for="image-file-input" class="cursor-pointer flex items-center justify-center p-2 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition">
+                    <svg class="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-5 3h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span id="image-upload-text" class="text-white text-sm font-medium">Attach Image for Analysis</span>
+                </label>
+                <input type="file" id="image-file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                <div id="image-preview" class="mt-2 hidden relative p-2 border border-dashed border-gray-600 rounded-lg">
+                    <img id="preview-img" class="max-w-full h-auto rounded-lg max-h-40 mx-auto" alt="Image Preview">
+                    <button onclick="clearImage()" class="absolute top-0 right-0 m-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold opacity-80 hover:opacity-100 transition">×</button>
+                </div>
+            </div>
+
+            <div id="loading-indicator" class="text-sm text-blue-400 mb-2 hidden flex items-center space-x-2">
+                <div class="flex items-center space-x-1">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+                <span id="loading-text">NEXUS is thinking...</span>
             </div>
             
-            <!-- Gemini-powered Summary Feature -->
-            <button id="summarize-btn" onclick="generateSummary()" class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 text-sm">
-                ✨ Summarize Chat
-            </button>
-        </div>
-
-        <!-- Chat History -->
-        <div id="chat-box" class="flex-grow overflow-y-auto space-y-4 pr-2 pb-4">
-            <!-- Messages will be injected here -->
-        </div>
-
-        <!-- Mode Selector and Input Area -->
-        <div class="bg-white p-4 rounded-xl shadow-2xl flex flex-col space-y-3 z-10">
-            
-            <!-- Mode Selector -->
-            <div id="mode-selector" class="flex flex-wrap gap-2">
-                <button class="mode-btn active" data-mode="Narrative">💬 NARRATIVE</button>
-                <button class="mode-btn" data-mode="Coding">💻 CODING</button>
-                <button class="mode-btn" data-mode="Wiki">🌐 WIKI (Grounded)</button>
-                <button class="mode-btn" data-mode="Imagine">🖼️ IMAGINE (Image Gen)</button>
+            <div class="flex items-center space-x-2">
+                <input type="text" id="user-input" placeholder="Ask a question, request code, or type a prompt..."
+                       class="flex-grow p-4 rounded-xl bg-gray-800 border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none placeholder-gray-500 text-white transition duration-200"
+                       onkeydown="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()" id="send-button"
+                        class="cta-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                </button>
             </div>
-
-            <!-- Input Bar -->
-            <div class="flex space-x-3">
-                <input type="text" id="user-input" placeholder="Ask a question..."
-                       class="flex-grow px-4 py-3 border border-gray-300 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 shadow-inner transition duration-150">
-                <button id="send-btn" onclick="sendMessage()"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-indigo-300">
-                    Send
+            
+            <!-- Gemini Tool Integration Buttons -->
+            <div class="flex flex-wrap justify-start space-x-3 mt-3">
+                <button onclick="advancedThinking()" id="thinking-button"
+                        class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-md hover:shadow-lg">
+                    ✨ Advanced Thinking
+                </button>
+                
+                <!-- IMAGE GENERATION BUTTON -->
+                <button onclick="imageAction()" id="image-action-button"
+                        class="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white text-sm font-semibold rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-md hover:shadow-lg">
+                    🖼️ Generate Image (Imagen 3.0)
                 </button>
             </div>
         </div>
+
+        <!-- Footer for Credits -->
+        <footer class="mt-4 pt-3 border-t border-gray-700/50 text-center">
+            <p class="text-xs text-gray-500">
+                Created and Developed by <span class="font-bold text-blue-400">ABHIRAJ SINGH</span>.
+            </p>
+        </footer>
+
     </div>
 
-    <!-- Footer for Credits -->
-    <footer class="w-full text-center py-2 text-xs text-gray-500 bg-white border-t border-gray-100">
-        UI & Concept designed by <span class="font-semibold text-indigo-600">Abhiraj Singh</span>. Powered by Gemini API.
-    </footer>
-
     <script>
-        // --- CONSTANTS AND STATE ---
-        const API_KEY_STORAGE_KEY = 'geminiApiKey';
-        let GEMINI_API_KEY = '';
-        let chatHistory = [];
-        let currentMode = 'Narrative'; // Default mode
+        let currentMode = 'Classic Chat'; // State for tracking the mode
+        let selectedImageBase64 = null; // State for image data (New)
+        let isProUser = false; // State for Pro access
 
-        // API URLs
-        const GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
-        const IMAGEN_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=";
-        const IMAGEN_MODEL_NAME = "Imagen 3.0";
-        const MAX_CHATS = 10; // Maximum number of messages to keep in history for context
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const thinkingButton = document.getElementById('thinking-button');
+        const imageActionButton = document.getElementById('image-action-button'); 
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingText = document.getElementById('loading-text');
+        const currentModeDisplay = document.getElementById('current-mode-display');
+        const imageFileInput = document.getElementById('image-file-input');
+        const imagePreviewDiv = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const imageUploadText = document.getElementById('image-upload-text');
+        const proToggle = document.getElementById('pro-toggle');
+        const appTitle = document.getElementById('app-title');
+        const versionText = document.getElementById('version-text');
 
-        const MODE = {
-            NARRATIVE: 'Narrative',
-            CODING: 'Coding',
-            WIKI: 'Wiki',
-            IMAGINE: 'Imagine' // New mode
+        const IMAGE_EDITOR_MODE_NAME = 'Image Editor';
+        
+        // Mode-specific instructions for the system prompt
+        const modeInstructions = {
+            'Classic Chat': "You are responsible, accurate, and ideal for coding/scripting. You must provide a clear and brief 'Accurate Response' followed by a 'Reasoning Statement' based on your cross-check.",
+            'Canvas Creator': "You are an AI assistant specialized in structuring and outlining content for a collaborative Canvas or document editor. Your responses must focus on generating structured plans, outlines, markdown templates, or component breakdowns (like a project plan, a story outline, or a code component list). Your 'Accurate Response' must be a structured plan, and your 'Reasoning Statement' must justify the structure for Canvas use.",
+            'Code Debugger': "You are an expert software engineer specialized in code review and debugging. Analyze the user's code or description. Your 'Accurate Response' must contain a suggested fix or optimization in a code block. Your 'Reasoning Statement' must explain the vulnerability, bug, or improvement.",
+            'Meal Planner': "You are an expert culinary assistant. Based on the user's request, you must generate a complete recipe. Your response must be a single JSON object conforming to the provided schema. DO NOT include any text outside the JSON block. Do not include 'Accurate Response' or 'Reasoning Statement' as the output must be pure JSON.",
+            'Image Editor': "You are an advanced AI image editor. Your goal is to receive an image and a text instruction, and then generate a new, edited image using a separate multimodal API call. After the image is generated, your response will be text confirming the edit and explaining what was changed. DO NOT generate text describing the image or a structured response, focus on the confirmation text only. Your Accurate Response must be 'Image Editing Complete.'",
         };
 
-        // --- DOM ELEMENTS ---
-        const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
-        const modeTitle = document.getElementById('mode-title');
-        const modeDescription = document.getElementById('mode-description');
-        const apiKeyInput = document.getElementById('api-key-input');
-        const apiKeyContainer = document.getElementById('api-key-container');
-        const apiKeyStatus = document.getElementById('api-key-status');
-        const modeSelector = document.getElementById('mode-selector');
+        const recipeSchema = {
+            type: "OBJECT",
+            properties: {
+                "recipeName": { "type": "STRING", "description": "The concise name of the recipe." },
+                "description": { "type": "STRING", "description": "A brief, appetizing description of the meal." },
+                "servings": { "type": "STRING", "description": "The number of people the recipe serves." },
+                "prepTime": { "type": "STRING", "description": "The estimated preparation time." },
+                "ingredients": {
+                    "type": "ARRAY",
+                    "description": "A list of ingredients with quantities (e.g., '1 lb chicken breast', '2 cups broccoli florets').",
+                    "items": { "type": "STRING" }
+                },
+                "instructions": {
+                    "type": "ARRAY",
+                    "description": "Step-by-step instructions for cooking.",
+                    "items": { "type": "STRING" }
+                }
+            },
+            "propertyOrdering": ["recipeName", "description", "servings", "prepTime", "ingredients", "instructions"]
+        };
 
-        // --- UTILITY FUNCTIONS ---
 
-        /**
-         * Checks if the user's query is asking who developed the bot.
-         * @param {string} query The user's input.
-         * @returns {boolean} True if it's a creator query.
-         */
-        function isCreatorQuery(query) {
-            const lowerQuery = query.toLowerCase();
-            return lowerQuery.includes("who made you") ||
-                   lowerQuery.includes("who created you") ||
-                   lowerQuery.includes("your creator") ||
-                   lowerQuery.includes("your developer") ||
-                   lowerQuery.includes("who built you");
+        // --- Utility Functions ---
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Function to convert role name for display
-        function getRoleDisplay(role) {
-            switch (role) {
-                case 'user': return 'You';
-                case 'ai': return 'Nexus Mind';
-                case 'system': return 'System Message';
-                case 'error': return 'Error';
-                default: return 'Bot';
+        function toggleInput(disabled, actionType = 'thinking') {
+            userInput.disabled = disabled;
+            sendButton.disabled = disabled;
+            thinkingButton.disabled = disabled;
+            imageActionButton.disabled = disabled; 
+            
+            document.querySelectorAll('.mode-button').forEach(btn => btn.disabled = disabled);
+
+            if (disabled) {
+                loadingIndicator.classList.remove('hidden');
+                if (actionType === 'image') {
+                    loadingText.textContent = 'NEXUS is creating image art... This may take a moment.';
+                } else if (actionType === 'edit') {
+                    loadingText.textContent = 'NEXUS Pro is performing Image Edit... (Image-to-Image API Call)';
+                } else {
+                    const modelName = isProUser ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash';
+                    loadingText.textContent = `NEXUS is thinking using ${modelName}... (Cross-Check in Progress)`;
+                }
+            } else {
+                loadingIndicator.classList.add('hidden');
             }
         }
-
-        /**
-         * Converts markdown text to HTML, handles bold, italics, and code blocks.
-         * @param {string} text The markdown text.
-         * @returns {string} The HTML string.
-         */
-        function formatMarkdown(text) {
-            // Escape HTML characters first
-            let html = text.replace(/&/g, '&amp;')
-                           .replace(/</g, '&lt;')
-                           .replace(/>/g, '&gt;');
-
-            // 1. Code blocks (```language ... ```) - Handle these first to prevent interior formatting
-            html = html.replace(/```(\w+)?\n([\s\S]+?)```/g, (match, lang, code) => {
-                const codeBlock = `<pre><code class="${lang || 'plaintext'}">${code}</code></pre>`;
-                return codeBlock;
-            });
-
-            // 2. Bold
-            html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
+        
+        function updateProUI() {
+            const titleGradient = isProUser 
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500' 
+                : 'bg-gradient-to-r from-blue-400 to-purple-500';
             
-            // 3. Italics
-            html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+            appTitle.className = `text-3xl font-extrabold tracking-tight text-transparent bg-clip-text ${titleGradient} transition duration-500`;
+            versionText.textContent = isProUser ? 'Advanced Thinking & Image Editing - **PRO ACCESS**' : 'Advanced Thinking & Structured Output - Standard';
             
-            // 4. Newlines to breaks
-            html = html.replace(/\n/g, '<br>');
+            proToggle.innerHTML = isProUser 
+                ? '<span id="pro-status-icon" class="mr-2">✨</span><span id="pro-status-text">Simulate Pro Access (Enabled)</span>'
+                : '<span id="pro-status-icon" class="mr-2">👑</span><span id="pro-status-text">Simulate Pro Access (Free)</span>';
+            proToggle.classList.toggle('pro-pulse-button', !isProUser);
+            proToggle.classList.toggle('bg-yellow-600', true);
+            proToggle.classList.toggle('bg-yellow-800', isProUser);
+            proToggle.classList.toggle('text-gray-900', !isProUser);
+            proToggle.classList.toggle('text-yellow-300', isProUser);
 
-            return html;
+            // Update Image Editor button state
+            const imageEditorButton = document.getElementById('mode-image-editor');
+            if (isProUser) {
+                 imageEditorButton.classList.remove('mode-button-pro-locked', 'mode-button-inactive');
+                 imageEditorButton.classList.add('mode-button-pro-active');
+            } else {
+                 imageEditorButton.classList.add('mode-button-pro-locked');
+                 imageEditorButton.classList.remove('mode-button-pro-active', 'mode-button-inactive');
+            }
+
+            // Reset mode if the user loses Pro access while in a Pro mode
+            if (!isProUser && currentMode === IMAGE_EDITOR_MODE_NAME) {
+                changeMode('Classic Chat');
+            }
+
+            // Update mode button visuals for the currently selected mode
+            updateModeButtonStyles(currentMode);
         }
 
-        /**
-         * Creates and displays a message in the chat box.
-         * @param {string} text The message content.
-         * @param {string} role 'user', 'ai', 'system', or 'error'.
-         * @param {Array<Object>} sources Array of source objects for grounding.
-         */
-        function displayMessage(text, role, sources) {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.classList.add('flex', 'space-x-3', 'animate-fadeInSlide');
-            messageWrapper.setAttribute('data-role', role);
+        function toggleProAccess() {
+            isProUser = !isProUser;
+            updateProUI();
+            const status = isProUser ? 'Unlocked **Gemini 2.5 Pro** performance and **Image Editor** mode.' : 'Reverted to Standard features.';
+            showMessage(`PRO STATUS: ${status}`, "system", isProUser ? 'pro' : 'standard');
+        }
 
-            const avatar = document.createElement('div');
-            avatar.classList.add('w-8', 'h-8', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'text-xs', 'font-bold', 'flex-shrink-0');
-            
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('p-4', 'rounded-xl', 'shadow-md', 'break-words', 'w-full', 'max-w-4xl', 'transition-all', 'duration-300', 'message-text-container');
-            
-            const roleDisplay = document.createElement('p');
-            roleDisplay.classList.add('text-sm', 'font-semibold', 'mb-1');
-
-            if (role === 'user') {
-                messageWrapper.classList.add('justify-end');
-                avatar.textContent = 'U';
-                avatar.classList.add('bg-gray-500', 'order-2');
-                messageBubble.classList.add('bg-indigo-500', 'text-white', 'order-1', 'rounded-br-none');
-                roleDisplay.textContent = getRoleDisplay(role);
-                roleDisplay.classList.add('text-indigo-200');
-            } else {
-                messageWrapper.classList.add('justify-start');
-                avatar.textContent = role === 'ai' ? 'AI' : (role === 'system' ? '⚙️' : '🚨');
-                avatar.classList.add('bg-indigo-600', 'order-1');
-                messageBubble.classList.add('ai-message', 'rounded-tl-none', 'order-2');
+        function updateModeButtonStyles(activeMode) {
+             document.querySelectorAll('.mode-button').forEach(button => {
+                const modeName = button.textContent.split('(')[0].trim();
                 
-                if (role === 'error') {
-                    messageBubble.classList.replace('ai-message', 'bg-red-100');
-                    messageBubble.style.borderLeftColor = '#ef4444';
-                    roleDisplay.textContent = getRoleDisplay(role);
-                    roleDisplay.classList.add('text-red-700');
-                    avatar.classList.replace('bg-indigo-600', 'bg-red-600');
-                } else {
-                    roleDisplay.textContent = getRoleDisplay(role);
-                    roleDisplay.classList.add('text-indigo-700');
-                }
-            }
+                button.classList.remove('mode-button-active', 'mode-button-inactive', 'mode-button-pro-active', 'mode-button-pro-locked');
 
-            // Text content
-            const textContent = document.createElement('div');
-            textContent.classList.add('message-text', 'text-base', 'leading-relaxed');
-            textContent.innerHTML = formatMarkdown(text);
-            
-            messageBubble.appendChild(roleDisplay);
-            messageBubble.appendChild(textContent);
-
-            // Append parts
-            messageWrapper.appendChild(avatar);
-            messageWrapper.appendChild(messageBubble);
-
-            // Add Grounding Sources if present
-            if (sources && sources.length > 0) {
-                const sourcesDiv = document.createElement('div');
-                sourcesDiv.classList.add('mt-2', 'pt-2', 'border-t', 'border-gray-200', 'text-xs', 'text-gray-500', 'w-full');
-                sourcesDiv.innerHTML = '<strong>Sources:</strong> ' + sources.map(s => 
-                    `<a href="${s.uri}" target="_blank" class="text-indigo-600 hover:text-indigo-800 hover:underline">${s.title.substring(0, 50)}...</a>`
-                ).join(', ');
-                messageBubble.appendChild(sourcesDiv);
-            }
-
-            chatBox.appendChild(messageWrapper);
-            
-            // Highlight code blocks
-            messageBubble.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-
-            // Scroll to bottom
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Display welcome message on load
-        function displayWelcomeMessage() {
-            displayMessage("Hello! I'm Nexus Mind 2.0. Choose a mode to begin. Try the new 🖼️ IMAGINE mode or the ✨ Summarize Chat feature!", 'system', []);
-        }
-
-        // --- API KEY HANDLING ---
-        function updateApiKeyStatus(isValid) {
-            apiKeyStatus.textContent = isValid ? 'Key Valid (Click to Change)' : 'Key Missing/Invalid (Click to Enter)';
-            apiKeyStatus.classList.remove('valid', 'invalid');
-            apiKeyStatus.classList.add(isValid ? 'valid' : 'invalid');
-        }
-
-        function toggleApiKeyInput(show) {
-            if (show) {
-                apiKeyContainer.classList.remove('max-w-0', 'opacity-0');
-                apiKeyContainer.classList.add('max-w-screen-sm', 'opacity-100');
-                apiKeyInput.focus();
-            } else {
-                apiKeyContainer.classList.remove('max-w-screen-sm', 'opacity-100');
-                apiKeyContainer.classList.add('max-w-0', 'opacity-0');
-            }
-        }
-
-        function saveApiKey() {
-            const key = apiKeyInput.value.trim();
-            if (key) {
-                GEMINI_API_KEY = key;
-                localStorage.setItem(API_KEY_STORAGE_KEY, key);
-                updateApiKeyStatus(true);
-                toggleApiKeyInput(false);
-                displayMessage("API Key saved successfully. You can now use all modes!", 'system', []);
-            } else {
-                displayMessage("Please enter a valid API Key.", 'error', []);
-                updateApiKeyStatus(false);
-            }
-        }
-
-        // --- CHAT MODE LOGIC ---
-        modeSelector.addEventListener('click', (event) => {
-            const button = event.target.closest('.mode-btn');
-            if (button) {
-                const mode = button.getAttribute('data-mode');
-                applyMode(mode);
-                // Update active state
-                modeSelector.querySelectorAll('.mode-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
-                });
-            }
-        });
-
-        function applyMode(mode) {
-            currentMode = mode;
-            chatHistory = []; // Clear history on mode switch
-
-            // Welcome message for new mode
-            displayWelcomeMessage(); 
-
-            switch (mode) {
-                case MODE.NARRATIVE:
-                    modeTitle.textContent = 'NARRATIVE Mode';
-                    modeDescription.innerHTML = 'Chat naturally with the model. Grounding search is off.';
-                    userInput.placeholder = 'e.g., Explain the concept of general relativity...';
-                    break;
-                case MODE.CODING:
-                    modeTitle.textContent = 'CODING Mode';
-                    modeDescription.innerHTML = 'Ask the model to generate, explain, or debug code snippets.';
-                    userInput.placeholder = 'e.g., Write a Python function for a quicksort algorithm...';
-                    break;
-                case MODE.WIKI:
-                    modeTitle.textContent = 'WIKI Mode (Grounded)';
-                    modeDescription.innerHTML = 'Ask real-time questions. Model uses Google Search for current, grounded information.';
-                    userInput.placeholder = 'e.g., What are the current top headlines in tech?';
-                    break;
-                case MODE.IMAGINE:
-                    modeTitle.textContent = `IMAGINE Mode (Image Generation)`;
-                    modeDescription.innerHTML = `Describe the image you want to create. Powered by ${IMAGEN_MODEL_NAME}. **Note: This does not use chat history context.**`;
-                    userInput.placeholder = 'e.g., A watercolor painting of a cat wearing a tiny crown...';
-                    break;
-                default:
-                    modeTitle.textContent = 'Unknown Mode';
-                    modeDescription.innerHTML = 'Please select a valid mode.';
-                    break;
-            }
-            userInput.focus();
-        }
-
-        // --- GEMINI API CALL (TEXT GENERATION) ---
-
-        /**
-         * Cleans up history and prepares content for the Gemini API call.
-         * @returns {Array<Object>} The cleaned chat history.
-         */
-        function getApiHistory() {
-            // Filter out system and error messages and limit history size
-            const conversation = chatHistory
-                .filter(msg => msg.role !== 'system' && msg.role !== 'error')
-                .slice(-MAX_CHATS * 2); // Keep last N user/model turns
-
-            // Map the simple history objects to the API's required format
-            return conversation.map(msg => ({
-                role: msg.role === 'ai' ? 'model' : 'user',
-                parts: [{ text: msg.text }]
-            }));
-        }
-
-        async function handleTextMode(query) {
-            if (!GEMINI_API_KEY) {
-                displayMessage("Please enter your API Key before sending a message.", 'error', []);
-                return;
-            }
-
-            const apiHistory = getApiHistory();
-            apiHistory.push({ role: "user", parts: [{ text: query }] });
-
-            let systemPrompt = "You are a friendly, helpful, and insightful AI assistant. You respond clearly and concisely. Use markdown for formatting.";
-            let tools = [];
-
-            if (currentMode === MODE.CODING) {
-                systemPrompt = "You are an expert software developer. Respond with code snippets using markdown code blocks and clear explanations. Focus on the requested language/task.";
-            } else if (currentMode === MODE.WIKI) {
-                systemPrompt = "You are a current events and knowledge expert. Use Google Search grounding to ensure your answers are factual and up-to-date. Provide short, clear responses and cite your sources.";
-                tools = [{ "google_search": {} }];
-            }
-
-            const apiUrl = `${GEMINI_API_BASE_URL}${GEMINI_API_KEY}`;
-            
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: apiHistory,
-                        tools: tools.length > 0 ? tools : undefined,
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
-                }
-
-                const result = await response.json();
-                const candidate = result.candidates?.[0];
-
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    const text = candidate.content.parts[0].text;
-                    
-                    // 6. Extract grounding sources
-                    let sources = [];
-                    const groundingMetadata = candidate.groundingMetadata;
-                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                        sources = groundingMetadata.groundingAttributions
-                            .map(attribution => ({
-                                uri: attribution.web?.uri,
-                                title: attribution.web?.title,
-                            }))
-                            .filter(source => source.uri && source.title);
+                if (modeName === IMAGE_EDITOR_MODE_NAME) {
+                    if (isProUser && activeMode === IMAGE_EDITOR_MODE_NAME) {
+                        button.classList.add('mode-button-pro-active');
+                    } else if (isProUser) {
+                        button.classList.add('mode-button-inactive');
+                    } else {
+                        button.classList.add('mode-button-pro-locked');
                     }
-
-                    // 7. Store and Display AI response
-                    chatHistory.push({ role: "ai", text: text });
-                    displayMessage(text, 'ai', sources);
-                    userInput.focus();
                 } else {
-                    displayMessage("The model returned an empty response. Please try rephrasing your query.", 'error', []);
+                    if (activeMode === modeName) {
+                         button.classList.add('mode-button-active');
+                    } else {
+                         button.classList.add('mode-button-inactive');
+                    }
                 }
+            });
+        }
+        
+        function changeMode(newMode) {
+            if (newMode === IMAGE_EDITOR_MODE_NAME && !isProUser) {
+                showMessage("Image Editor is a **PRO ACCESS** feature. Please enable Pro Access to use.", "system", 'pro');
+                return;
+            }
+            if (currentMode === newMode) return;
+            currentMode = newMode;
+            currentModeDisplay.textContent = newMode;
+            
+            updateModeButtonStyles(newMode);
+            updateImageActionButton();
 
-            } catch (error) {
-                console.error("Gemini API error:", error);
-                displayMessage(`Request failed: ${error.message.substring(0, 150)}... Check console for full details.`, 'error', []);
+            showMessage(`Mode switched to **${newMode}**. NEXUS will now respond based on the new context.`, "system", isProUser ? 'pro' : 'standard');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedImageBase64 = e.target.result;
+                previewImg.src = e.target.result;
+                imagePreviewDiv.classList.remove('hidden');
+                imageUploadText.textContent = `Image Attached: ${file.name.substring(0, 20)}${file.name.length > 20 ? '...' : ''}`;
+                
+                updateThinkingButtonText();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            selectedImageBase64 = null;
+            imageFileInput.value = '';
+            imagePreviewDiv.classList.add('hidden');
+            imageUploadText.textContent = 'Attach Image for Analysis';
+            updateThinkingButtonText();
+        }
+
+        function updateThinkingButtonText() {
+            if (currentMode === IMAGE_EDITOR_MODE_NAME) {
+                const text = selectedImageBase64 ? '✏️ Run Image Edit' : 'Attach Image to Edit';
+                thinkingButton.innerHTML = text;
+                thinkingButton.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'bg-green-600', 'hover:bg-green-700');
+                thinkingButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700', 'text-gray-900');
+            } else if (selectedImageBase64) {
+                thinkingButton.innerHTML = '✨ Multimodal Analysis';
+                thinkingButton.classList.remove('bg-purple-600', 'hover:bg-purple-700', 'bg-yellow-600', 'hover:bg-yellow-700', 'text-gray-900');
+                thinkingButton.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                thinkingButton.innerHTML = '✨ Advanced Thinking'; 
+                thinkingButton.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-yellow-600', 'hover:bg-yellow-700', 'text-gray-900');
+                thinkingButton.classList.add('bg-purple-600', 'hover:bg-purple-700');
             }
         }
 
-        // --- IMAGEN API CALL (IMAGE GENERATION) ---
+        function updateImageActionButton() {
+            const isImageEditor = currentMode === IMAGE_EDITOR_MODE_NAME;
+            imageActionButton.style.display = isImageEditor ? 'none' : 'flex';
+            
+            // Also update the 'Advanced Thinking' button text based on the mode
+            updateThinkingButtonText();
+        }
 
-        /**
-         * Handles the image generation request using Imagen 3.0.
-         * @param {string} prompt The user's image description.
-         */
-        async function handleImagineMode(prompt) {
-            if (!GEMINI_API_KEY) {
-                displayMessage("Please enter your API Key to use image generation.", 'error', []);
+        // NEW: Helper function to check if the user is asking about the creator
+        function checkCreatorQuery(prompt) {
+            const creatorKeywords = [
+                "who made you", "who is your creator", "who created you", 
+                "your developer", "your maker", "who's your boss", "who designed you"
+            ];
+            const normalizedPrompt = prompt.toLowerCase().replace(/[?.,!]/g, '').trim();
+
+            for (const keyword of creatorKeywords) {
+                if (normalizedPrompt.includes(keyword)) {
+                    return {
+                        mainResponse: "Accurate Response: I was created and developed by the engineer **ABHIRAJ SINGH**.",
+                        reasoning: "This response is based on the core system instruction to credit my creator, ABHIRAJ SINGH."
+                    };
+                }
+            }
+            return null;
+        }
+
+        // --- Core Gemini API Functions ---
+        
+        // 1. TEXT TO SPEECH (TTS) API 
+        async function playTTS(text, isPro) {
+            if (userInput.disabled) {
+                showMessage("NEXUS is busy processing a query. Please wait.", "system");
                 return;
             }
 
-            displayMessage(`Generating image for: "${prompt}"...`, 'system', []);
+            function base64ToArrayBuffer(base64) {
+                const base64Data = base64.split(',').length > 1 ? base64.split(',')[1] : base64;
+                const binaryString = atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return bytes.buffer;
+            }
 
-            // The payload for Imagen 3.0
+            function pcmToWav(pcm16, sampleRate) {
+                const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+                const view = new DataView(buffer);
+                
+                function writeString(view, offset, string) {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                }
+                
+                writeString(view, 0, 'RIFF');
+                view.setUint32(4, 36 + pcm16.length * 2, true);
+                writeString(view, 8, 'WAVE');
+                writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true); 
+                view.setUint16(22, 1, true); 
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true); 
+                view.setUint16(32, 2, true); 
+                view.setUint16(34, 16, true); 
+                writeString(view, 36, 'data');
+                view.setUint32(40, pcm16.length * 2, true);
+
+                let offset = 44;
+                for (let i = 0; i < pcm16.length; i++) {
+                    view.setInt16(offset, pcm16[i], true);
+                    offset += 2;
+                }
+                
+                return new Blob([buffer], { type: 'audio/wav' });
+            }
+            
+            toggleInput(true, 'tts'); 
+            loadingText.textContent = 'NEXUS is generating speech...';
+
+            const voice = isPro ? "Fenrir" : "Rasalgethi";
+
             const payload = {
-                instances: [{ prompt: prompt }],
-                parameters: { "sampleCount": 1 }
+                contents: [{ parts: [{ text: `Say clearly and formally: ${text}` }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voice } 
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
             };
 
-            const apiUrl = `${IMAGEN_API_BASE_URL}${GEMINI_API_KEY}`;
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -515,201 +563,607 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
-                }
+                
+                if (!response.ok) throw new Error(`API error: ${response.statusText}`);
 
                 const result = await response.json();
-                const base64Data = result?.predictions?.[0]?.bytesBase64Encoded;
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
 
-                if (base64Data) {
-                    const imageUrl = `data:image/png;base64,${base64Data}`;
-                    displayImageMessage(imageUrl, prompt);
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 16000; 
+
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    
+                    const audio = new Audio(URL.createObjectURL(wavBlob));
+                    
+                    audio.onended = () => toggleInput(false);
+                    audio.play();
+
+                    showMessage("🔊 NEXUS Speaking...", "system", isPro ? 'pro' : 'standard');
                 } else {
-                    displayMessage("Image generation failed. The model returned no image data.", 'error', []);
+                    showMessage("Error: NEXUS could not generate speech data.", "system", 'standard');
+                    toggleInput(false);
                 }
 
             } catch (error) {
-                console.error("Image generation error:", error);
-                displayMessage(`Image generation failed due to an error. Check console for details. Error: ${error.message.substring(0, 150)}...`, 'error', []);
+                console.error("TTS API Call failed:", error);
+                showMessage("Error in Text-to-Speech generation. Check console for details.", "system", 'standard');
+                toggleInput(false);
             }
         }
 
-        /**
-         * Displays the generated image in the chat box.
-         * @param {string} imageUrl The base64 image URL.
-         * @param {string} prompt The prompt used to generate the image.
-         */
-        function displayImageMessage(imageUrl, prompt) {
-            const messageWrapper = document.createElement('div');
-            messageWrapper.classList.add('flex', 'space-x-3', 'animate-fadeInSlide', 'justify-start');
-            messageWrapper.setAttribute('data-role', 'ai');
 
-            const avatar = document.createElement('div');
-            avatar.textContent = 'AI';
-            avatar.classList.add('w-8', 'h-8', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-white', 'text-xs', 'font-bold', 'flex-shrink-0', 'bg-indigo-600');
+        // 2. TEXT/MULTIMODAL/STRUCTURED GENERATION (LLM) API 
+        async function generateNEXUSResponse(prompt, base64Image) {
+            const isMealPlannerMode = currentMode === 'Meal Planner';
+            const isMultimodal = base64Image !== null;
+
+            // Model simulation (use flash for all text-based modes, but UI shows Pro)
+            const model = "gemini-2.5-flash-preview-05-20";
             
-            const messageContainer = document.createElement('div');
-            messageContainer.classList.add('p-4', 'rounded-xl', 'shadow-md', 'break-words', 'w-full', 'max-w-md', 'transition-all', 'duration-300', 'bg-gray-100', 'border-l-4', 'border-indigo-500');
+            const basePersona = "Act as NEXUS AI 3.0. Ensure your answer matches present-day AI capabilities. Always use markdown for formatting.";
+            const modeInstruction = modeInstructions[currentMode] || modeInstructions['Classic Chat'];
+            const systemPrompt = `${basePersona} ${modeInstruction} ${isProUser ? 'You are powered by Gemini 2.5 Pro.' : ''}`;
 
-            const promptTitle = document.createElement('p');
-            promptTitle.classList.add('text-sm', 'text-gray-600', 'mb-2', 'font-medium');
-            promptTitle.textContent = `Generated Image: "${prompt}"`;
-            messageContainer.appendChild(promptTitle);
+            const parts = [];
+            let useSearchGrounding = !isMultimodal && !isMealPlannerMode;
 
-            const imageElement = document.createElement('img');
-            imageElement.src = imageUrl;
-            imageElement.alt = prompt;
-            imageElement.classList.add('max-w-full', 'h-auto', 'rounded-lg', 'shadow-xl', 'mt-2', 'border-2', 'border-indigo-500/50');
-            imageElement.onerror = () => {
-                imageElement.style.display = 'none';
-                const errorText = document.createElement('p');
-                errorText.classList.add('text-red-500');
-                errorText.textContent = 'Could not load the generated image.';
-                messageContainer.appendChild(errorText);
+            // 1. Add Image Data if present
+            if (isMultimodal) {
+                const [mimeTypePart, base64Data] = base64Image.split(',');
+                const mimeType = mimeTypePart.split(';')[0].split(':')[1];
+                
+                parts.push({
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data
+                    }
+                });
+                useSearchGrounding = false; 
+            }
+            
+            // 2. Add Text Prompt
+            parts.push({ text: prompt });
+
+            // Construct the payload
+            const payload = {
+                contents: [{ role: "user", parts: parts }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
             };
             
-            messageContainer.appendChild(imageElement);
-            messageWrapper.appendChild(avatar);
-            messageWrapper.appendChild(messageContainer);
-            
-            chatBox.appendChild(messageWrapper);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (useSearchGrounding) {
+                payload.tools = [{ "google_search": {} }];
+            }
+
+            // 3. Add Structured Output Configuration for Meal Planner
+            if (isMealPlannerMode) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: recipeSchema
+                };
+            }
+
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429) { 
+                            throw new Error('Rate limit exceeded. Retrying...');
+                        }
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+                    const text = candidate?.content?.parts?.[0]?.text || "Error: NEXUS could not formulate a response.";
+                    
+                    let sources = [];
+                    let parsedJson = null;
+                    
+                    // Handle Structured Response
+                    if (isMealPlannerMode) {
+                        try {
+                            const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
+                            const jsonText = jsonMatch ? jsonMatch[1] : text;
+                            parsedJson = JSON.parse(jsonText);
+                            return { text: parsedJson, sources: [], useSearchGrounding: false, isStructured: true };
+                        } catch (e) {
+                            console.error("Failed to parse structured JSON response:", e);
+                            return { text: "Error: Failed to parse structured recipe from AI. Try refining your request.", sources: [], useSearchGrounding: false, isStructured: false };
+                        }
+                    } 
+                    
+                    // Handle Standard/Multimodal Response
+                    else {
+                        const groundingMetadata = candidate?.groundingMetadata;
+                        if (useSearchGrounding && groundingMetadata?.groundingAttributions) {
+                            sources = groundingMetadata.groundingAttributions
+                                .map(attribution => ({
+                                    uri: attribution.web?.uri,
+                                    title: attribution.web?.title,
+                                }))
+                                .filter(source => source.uri && source.title);
+                        }
+                        return { text, sources, useSearchGrounding, isStructured: false };
+                    }
+
+
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        const delay = Math.pow(2, attempts) * 1000; 
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        return { text: "Error: NEXUS failed to complete the **Advanced Cross-Check** after multiple retries.", sources: [], useSearchGrounding: useSearchGrounding, isStructured: false };
+                    }
+                }
+            }
+        }
+        
+        // 3. IMAGE GENERATION API 
+        async function generateImage(prompt) {
+            const payload = { 
+                instances: [{ prompt: prompt }], 
+                parameters: { "sampleCount": 1} 
+            };
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429) { 
+                            throw new Error('Rate limit exceeded. Retrying...');
+                        }
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const base64Data = result?.predictions?.[0]?.bytesBase64Encoded;
+
+                    if (base64Data) {
+                        return `data:image/png;base64,${base64Data}`;
+                    } else {
+                        return "Error: NEXUS failed to generate an image. Response was empty or malformed.";
+                    }
+
+                } catch (error) {
+                    console.error("Image Generation API Error:", error);
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        const delay = Math.pow(2, attempts) * 1000; 
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        return "Error: NEXUS failed to generate the image after multiple retries.";
+                    }
+                }
+            }
         }
 
-        // --- GEMINI API CALL (SUMMARY FEATURE) ---
+        // 4. IMAGE EDITING API (PRO FEATURE)
+        async function generateEditedImage(prompt, base64Image) {
+            const [mimeTypePart, base64Data] = base64Image.split(',');
+            const mimeType = mimeTypePart.split(';')[0].split(':')[1];
+            
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: `Edit this image based on the following instruction: ${prompt}` },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ['IMAGE']
+                },
+                model: "gemini-2.5-flash-image-preview" 
+            };
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
 
-        /**
-         * Generates a summary of the current chat history using Gemini.
-         */
-        async function generateSummary() {
-            if (!GEMINI_API_KEY) {
-                displayMessage("Please enter your API Key to use the summary feature.", 'error', []);
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 429) { 
+                            throw new Error('Rate limit exceeded. Retrying...');
+                        }
+                        throw new Error(`API call failed with status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const base64Image = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                    
+                    if (base64Image) {
+                        return `data:image/png;base64,${base64Image}`;
+                    } else {
+                        return "Error: NEXUS Pro failed to generate the edited image. Response was empty or malformed.";
+                    }
+
+                } catch (error) {
+                    console.error("Image Editing API Error:", error);
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        const delay = Math.pow(2, attempts) * 1000; 
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        return "Error: NEXUS Pro failed to generate the edited image after multiple retries.";
+                    }
+                }
+            }
+        }
+
+
+        // --- Message Display Helpers ---
+
+        function addMessage(text, sender, isReasoning = false, style = 'standard', sources = []) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const bubble = document.createElement('div');
+            
+            let bubbleClass = isReasoning ? 'mt-1 text-xs opacity-70 ai-message' : (sender === 'user' ? 'user-message' : 'ai-message');
+            
+            if (style === 'pro' && sender === 'ai' && !isReasoning) {
+                 bubbleClass = 'message-bubble pro-message';
+            } else if (style === 'pro' && sender === 'ai' && isReasoning) {
+                 bubbleClass = 'mt-1 text-xs opacity-90 pro-message';
+            }
+            
+            bubble.className = `message-bubble ${bubbleClass}`;
+            
+            // Convert markdown code blocks
+            let formattedText = text.replace(/```([^`]+)```/g, (match, code) => 
+                `<pre class="bg-gray-700 p-2 my-1 rounded-lg overflow-x-auto text-sm border border-gray-600">${code.trim()}</pre>`
+            );
+            
+            // Convert simple markdown bold/italics
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedText = formattedText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            formattedText = formattedText.replace(/^(.*?):\s*/, '<strong class="text-blue-400">$1:</strong> '); // Highlight prompt keywords
+
+            bubble.innerHTML = formattedText;
+
+            if (sender === 'ai' && !isReasoning && style !== 'image-result') {
+                const ttsIcon = document.createElement('span');
+                ttsIcon.className = 'tts-icon ml-2 float-right';
+                ttsIcon.innerHTML = '🔊';
+                ttsIcon.title = isProUser ? 'PRO TTS (Fenrir Voice)' : 'Standard TTS (Rasalgethi Voice)';
+                const ttsText = text.replace(/```.*?```/gs, '').replace(/[\*#]/g, '').trim(); 
+                ttsIcon.onclick = () => playTTS(ttsText, isProUser);
+                bubble.appendChild(ttsIcon);
+
+                if (sources.length > 0) {
+                    const sourceHtml = document.createElement('div');
+                    sourceHtml.className = 'mt-2 pt-2 border-t border-gray-600 text-xs text-gray-400';
+                    sourceHtml.innerHTML = `**Cross-Checked Sources:** ${sources.slice(0, 3).map((s, i) => 
+                        `<a href="${s.uri}" target="_blank" class="text-blue-500 hover:text-blue-400 underline" title="${s.title}">[${i + 1}]</a>`
+                    ).join(' ')}`;
+                    bubble.appendChild(sourceHtml);
+                }
+            }
+            
+            wrapper.appendChild(bubble);
+            chatMessages.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function showMessage(text, sender, style = 'standard') {
+            addMessage(text, sender, false, style);
+        }
+        
+        // Helper to display the generated/edited image
+        function addImageResultToChat(imageUrl, prompt, isEdited = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex justify-start`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ai-message w-full max-w-sm p-4 ${isEdited ? 'pro-glow' : ''}`;
+            
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = prompt;
+            img.title = prompt;
+            img.className = 'w-full h-auto rounded-lg shadow-xl border border-gray-600';
+
+            const caption = document.createElement('p');
+            caption.className = `text-xs mt-3 italic text-center ${isEdited ? 'text-yellow-400 font-bold' : 'text-gray-400'}`;
+            caption.textContent = isEdited ? 
+                `PRO EDIT: "${prompt.substring(0, 80)}${prompt.length > 80 ? '...' : ''}"` :
+                `Generated image for: "${prompt.substring(0, 80)}${prompt.length > 80 ? '...' : ''}"`;
+
+            bubble.appendChild(img);
+            bubble.appendChild(caption);
+            wrapper.appendChild(bubble);
+            chatMessages.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        // Helper to display the structured recipe (Styled)
+        function addStructuredRecipe(recipe) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex justify-start w-full`;
+
+            const card = document.createElement('div');
+            card.className = `recipe-card w-full max-w-lg`;
+            
+            card.innerHTML = `
+                <h2 class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2">${recipe.recipeName || 'Untitled Recipe'}</h2>
+                <p class="text-sm text-gray-400 italic mb-4">${recipe.description || 'A delicious meal planned just for you.'}</p>
+                <div class="flex justify-around text-sm font-medium text-gray-300 border-y border-gray-700 py-3 mb-4 rounded-md bg-gray-800/50">
+                    <span class="flex items-center">👤 <strong class="text-white ml-1.5">${recipe.servings || 'N/A'}</strong> Servings</span>
+                    <span class="flex items-center">⏱️ <strong class="text-white ml-1.5">${recipe.prepTime || 'N/A'}</strong> Prep Time</span>
+                </div>
+            `;
+
+            const ingredientsSection = document.createElement('div');
+            ingredientsSection.className = 'mb-6 p-4 rounded-lg bg-gray-800 border border-gray-700';
+            ingredientsSection.innerHTML = '<h3 class="text-lg font-semibold text-purple-400 mb-3 border-b border-purple-400/50 pb-1">Ingredients</h3>';
+            const ul = document.createElement('ul');
+            ul.className = 'list-none space-y-2 text-sm';
+            (recipe.ingredients || ['No ingredients provided.']).forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start text-gray-300';
+                li.innerHTML = '<span class="text-purple-400 text-lg leading-none mr-2">•</span><span class="pt-px flex-1">' + item + '</span>';
+                ul.appendChild(li);
+            });
+            ingredientsSection.appendChild(ul);
+            card.appendChild(ingredientsSection);
+            
+            const instructionsSection = document.createElement('div');
+            instructionsSection.className = 'p-4 rounded-lg bg-gray-800 border border-gray-700';
+            instructionsSection.innerHTML = '<h3 class="text-lg font-semibold text-green-400 mb-3 border-b border-green-400/50 pb-1">Instructions</h3>';
+            const ol = document.createElement('ol');
+            ol.className = 'list-decimal list-inside space-y-4 text-sm';
+            (recipe.instructions || ['No instructions provided.']).forEach((step, index) => {
+                const li = document.createElement('li');
+                li.className = 'text-gray-300 pl-2';
+                li.innerHTML = `<span class="font-bold text-white">Step ${index + 1}:</span> ${step}`;
+                ol.appendChild(li);
+            });
+            instructionsSection.appendChild(ol);
+            card.appendChild(instructionsSection);
+
+            wrapper.appendChild(card);
+            chatMessages.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+
+        // --- Main Chat Logic ---
+
+        async function advancedThinking() {
+            const text = userInput.value.trim();
+            const isMultimodal = selectedImageBase64 !== null;
+            const isMealPlannerMode = currentMode === 'Meal Planner';
+
+            if (currentMode === IMAGE_EDITOR_MODE_NAME) {
+                // If in Image Editor mode, defer to the specific image editing logic
+                await imageEditorAction();
                 return;
             }
 
-            // Extract visible conversation history from the DOM for the most accurate view
-            const historyElements = document.querySelectorAll('#chat-box > div:not([data-role="system"]):not([data-role="error"])');
-            if (historyElements.length < 2) {
-                displayMessage("No conversation detected to summarize. Send a few messages first!", 'system', []);
+            if (text === "" && !isMultimodal) {
+                showMessage("Please enter a query or attach an image before using Advanced Thinking.", "system");
                 return;
             }
 
-            displayMessage("Generating summary of the conversation...", 'system', []);
+            const responseStyle = isProUser ? 'pro' : 'standard';
 
-            const conversation = Array.from(historyElements).map(el => {
-                const role = el.getAttribute('data-role');
-                const textElement = el.querySelector('.message-text');
-                // The text is stored in innerHTML with <br>s for newlines, so we extract textContent
-                const text = textElement ? textElement.textContent.trim() : ''; 
-                // Map 'user' and 'ai' roles to 'user' and 'model' for the API
-                const apiRole = role === 'user' ? 'user' : 'model';
-                return { role: apiRole, parts: [{ text: text }] };
-            }).filter(msg => msg.parts[0].text.length > 0);
-            
-            // Limit to the last N turns for efficiency
-            const limitedConversation = conversation.slice(-MAX_CHATS * 2);
+            // NEW: Check for creator query before API call
+            const creatorResponse = checkCreatorQuery(text);
+            if (creatorResponse) {
+                // 1. Display User Message
+                addMessage(text, 'user');
+                userInput.value = '';
 
-            const systemPrompt = "You are a concise summary generator. Based on the provided conversation history, generate a single, clear, and well-structured paragraph that summarizes the main topics and conclusions. Focus on key information.";
-            const userQuery = "Please summarize the preceding conversation.";
+                // 2. Display predefined response
+                addMessage(creatorResponse.mainResponse, 'ai', false, responseStyle);
+                addMessage(`Reasoning Statement: ${creatorResponse.reasoning}`, 'ai', true, responseStyle);
 
-            // Append the final user query to the conversation
-            const fullContents = [...limitedConversation, { role: 'user', parts: [{ text: userQuery }] }];
-
-            const apiUrl = `${GEMINI_API_BASE_URL}${GEMINI_API_KEY}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: fullContents,
-                        systemInstruction: {
-                            parts: [{ text: systemPrompt }]
-                        },
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+                // 3. Clear image if attached, re-enable input
+                if (isMultimodal) {
+                    clearImage();
                 }
-
-                const result = await response.json();
-                const summaryText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (summaryText) {
-                    displayMessage(`**Conversation Summary:**\n${summaryText}`, 'ai', []);
-                } else {
-                    displayMessage("Summary generation failed. The model returned no text.", 'error', []);
-                }
-
-            } catch (error) {
-                console.error("Summary generation error:", error);
-                displayMessage(`Summary generation failed: ${error.message.substring(0, 150)}...`, 'error', []);
-            }
-        }
-
-
-        // --- MAIN SEND LOGIC ---
-        async function sendMessage() {
-            const query = userInput.value.trim();
-            if (!query) return;
-
-            // 1. Display user message
-            displayMessage(query, 'user', []);
-            chatHistory.push({ role: "user", text: query });
-            userInput.value = '';
-
-            // --- NEW LOGIC FOR CREDITS (Abhiraj Singh) ---
-            if (isCreatorQuery(query)) {
-                const creatorResponse = "I was conceptualized and developed by **Abhiraj Singh**.";
-                chatHistory.push({ role: "ai", text: creatorResponse });
-                displayMessage(creatorResponse, 'ai', []);
                 userInput.focus();
-                return; // Stop here, no API call needed
+                return;
             }
-            // --- END NEW LOGIC ---
 
-            if (currentMode === MODE.IMAGINE) {
-                // 2. Handle image generation mode
-                await handleImagineMode(query);
-                return; // Stop further processing for Imagine mode
-            }
+            const modelUsed = isProUser && !isMultimodal && !isMealPlannerMode ? "Gemini 2.5 Pro (Simulated)" : "Gemini 2.5 Flash";
+
+            // 1. Display User Message
+            const userText = isMultimodal ? `(Image Attached) ${text}` : (isMealPlannerMode ? `[MEAL REQUEST] ${text}` : text);
+            addMessage(userText, 'user');
+            userInput.value = '';
             
-            // 3. Handle text generation modes (NARRATIVE, CODING, WIKI)
-            await handleTextMode(query);
-        }
+            toggleInput(true, 'thinking');
 
-        // Add event listener for Enter key
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        // Initialize focus and API key check on load
-        window.onload = () => {
-            // Load key from storage
-            const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-            if (storedKey) {
-                GEMINI_API_KEY = storedKey;
-                apiKeyInput.value = storedKey;
-                updateApiKeyStatus(true);
-            } else {
-                updateApiKeyStatus(false);
-                toggleApiKeyInput(true); // Automatically show input on first load if key is missing
+            // 2. Get Real Advanced Response from Gemini API
+            const apiResult = await generateNEXUSResponse(text, selectedImageBase64);
+            
+            // 3. Clean up after multimodal analysis (clear the image)
+            if (isMultimodal) {
+                clearImage();
             }
 
-            // Initializing applyMode will automatically show the welcome message
-            applyMode(MODE.NARRATIVE); 
-            // Select the initial mode button as active
-            document.querySelector(`.mode-btn[data-mode="${MODE.NARRATIVE}"]`).classList.add('active');
+            // 4. Handle Structured Data 
+            if (apiResult.isStructured) {
+                addStructuredRecipe(apiResult.text);
+                addMessage(`Reasoning Statement: Recipe generated using **Gemini's Structured Output** for precise, executable steps.`, 'ai', true, responseStyle);
+            } 
+            
+            // 5. Handle Standard Text/Image Analysis
+            else {
+                const [mainResponse, reasoningPart] = apiResult.text.split(/reasoning statement:/i);
+                
+                addMessage(mainResponse || "NEXUS response pending.", 'ai', false, responseStyle, apiResult.sources);
+                
+                if (reasoningPart) {
+                    addMessage(`Reasoning Statement: ${reasoningPart.trim()}`, 'ai', true, responseStyle);
+                } else if (!mainResponse.includes("Reasoning Statement")) {
+                     let reasonSource = apiResult.useSearchGrounding ? 'real-time **Gemini Search Grounding**' : '**Gemini Multimodal Analysis**';
+                     addMessage(`Reasoning Statement: Generated via **Advanced Thinking** using ${modelUsed} and ${reasonSource}.`, 'ai', true, responseStyle);
+                }
+            }
+
+            // 6. Re-enable input
+            toggleInput(false);
             userInput.focus();
         }
+        
+        async function imageAction() {
+            // Standard Image Generation (Imagen 3.0)
+            const prompt = userInput.value.trim();
+
+            if (prompt === "") {
+                showMessage("Please enter a descriptive prompt to generate an image.", "system");
+                return;
+            }
+            
+            if (currentMode === IMAGE_EDITOR_MODE_NAME) {
+                // This button should be hidden in Image Editor mode, but as a fallback, prevent gen
+                showMessage("Use the 'Run Image Edit' button for image-to-image operations.", "system");
+                return;
+            }
+            
+            // 1. Display User Message
+            addMessage(`[IMAGE GENERATION REQUESTED] ${prompt}`, 'user');
+            userInput.value = '';
+            clearImage(); 
+            
+            toggleInput(true, 'image');
+
+            // 2. Get Image URL
+            const imageUrl = await generateImage(prompt);
+            
+            // 3. Display AI Response
+            if (imageUrl.startsWith('data:image')) {
+                addImageResultToChat(imageUrl, prompt, false);
+                addMessage(`Reasoning Statement: Image generated successfully using the **Imagen 3.0** model.`, 'ai', true, isProUser ? 'pro' : 'standard');
+            } else {
+                addMessage(`Error: Image Generation failed. ${imageUrl}`, 'ai', false, 'standard');
+                addMessage(`Reasoning Statement: Failed to call the **Imagen 3.0** API.`, 'ai', true, 'standard');
+            }
+
+            // 4. Re-enable input
+            toggleInput(false);
+            userInput.focus();
+        }
+        
+        async function imageEditorAction() {
+            const prompt = userInput.value.trim();
+            const isImageEditor = currentMode === IMAGE_EDITOR_MODE_NAME;
+
+            if (!isImageEditor || !isProUser) return; // Should be blocked by changeMode, but check anyway
+
+            if (!selectedImageBase64) {
+                 showMessage("Please **attach an image** to use the Image Editor mode.", "system", 'pro');
+                 return;
+            }
+            
+            if (prompt === "") {
+                 showMessage("Please enter an instruction (e.g., 'Change the sky to purple' or 'Add sunglasses') to edit the image.", "system", 'pro');
+                 return;
+            }
+
+            // 1. Display User Message (including original image)
+            addMessage(`[PRO IMAGE EDIT] Original Image Attached. Instruction: ${prompt}`, 'user');
+            userInput.value = '';
+            
+            toggleInput(true, 'edit');
+
+            // 2. Get Edited Image URL
+            const imageUrl = await generateEditedImage(prompt, selectedImageBase64);
+            
+            // 3. Display AI Response
+            if (imageUrl.startsWith('data:image')) {
+                addMessage(`Accurate Response: Image Editing Complete.`, 'ai', false, 'pro');
+                addImageResultToChat(imageUrl, prompt, true);
+                addMessage(`Reasoning Statement: Image-to-Image editing completed using the **Gemini Flash Image Preview** model. The edited image is displayed above.`, 'ai', true, 'pro');
+            } else {
+                addMessage(`Error: Image Editing failed. ${imageUrl}`, 'ai', false, 'pro');
+                addMessage(`Reasoning Statement: Failed to call the **Gemini Flash Image Preview** editing API.`, 'ai', true, 'pro');
+            }
+            
+            // 4. Clear image for next edit, re-enable input
+            clearImage();
+            toggleInput(false);
+            userInput.focus();
+        }
+
+
+        async function sendMessage() {
+            // Check which action button to trigger based on the current mode
+            if (currentMode === IMAGE_EDITOR_MODE_NAME) {
+                await imageEditorAction();
+            } else if (selectedImageBase64 && currentMode !== IMAGE_EDITOR_MODE_NAME) {
+                 // Multimodal analysis (for non-editor modes)
+                 await advancedThinking(); 
+            } else {
+                // Standard text thinking/generation/structured output
+                await advancedThinking();
+            }
+        }
+
+
+        window.onload = () => {
+             userInput.focus();
+             updateProUI(); // Initialize Pro status and UI
+             updateThinkingButtonText(); // Initialize button text
+             updateImageActionButton(); // Initialize visibility
+             
+             // Expose functions globally
+             window.advancedThinking = advancedThinking;
+             window.sendMessage = sendMessage;
+             window.playTTS = playTTS;
+             window.changeMode = changeMode;
+             window.handleImageUpload = handleImageUpload;
+             window.clearImage = clearImage;
+             window.imageAction = imageAction; 
+             window.toggleProAccess = toggleProAccess; 
+             window.imageEditorAction = imageEditorAction; 
+        };
+
     </script>
 </body>
 </html>
